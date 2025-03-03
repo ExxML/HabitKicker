@@ -1,16 +1,18 @@
 """Main class for camera handling and habit detection"""
 
 import cv2
-
-from MediapipeHandler import MediapipeHandler
-from HabitDetector import HabitDetector
-from LandmarkConfig import LandmarkConfig
+import numpy as np
+from habitbreaker.config.landmark_config import LandmarkConfig
+from habitbreaker.detectors.habit_detector import HabitDetector
+from habitbreaker.utils.mediapipe_handler import MediapipeHandler
 
 class Camera:
     def __init__(self):
         self.mp_handler = MediapipeHandler()
         self.habit_detector = HabitDetector()
         self.config = LandmarkConfig()
+        self.show_landmarks = True
+        self.cap = None
 
     def _initialize_camera(self):
         """Initialize camera with specific settings"""
@@ -138,7 +140,62 @@ class Camera:
         cv2.line(frame, finger_pos, forehead_pos, (0, 0, 255), 2)
         cv2.line(frame, thumb_pos, finger_pos, (0, 0, 255), 2)
 
-    def _display_alerts(self, frame, nail_biting_detected, hair_pulling_detected):
+    def _check_slouching(self, frame, pose_landmarks):
+        """Check for slouching and draw visualization"""
+        if not pose_landmarks:
+            return False, 0.0
+
+        is_slouching, severity = self.habit_detector.check_slouching(pose_landmarks)
+        
+        if is_slouching:
+            # Draw slouching visualization
+            self._draw_slouching_visualization(frame, pose_landmarks, severity)
+            
+        return is_slouching, severity
+
+    def _draw_slouching_visualization(self, frame, pose_landmarks, severity):
+        """Draw visualization for slouching detection"""
+        # Get relevant landmarks
+        shoulder_left = self.calculate_landmark_position(
+            pose_landmarks[self.config.SHOULDER_LEFT], frame.shape
+        )
+        shoulder_right = self.calculate_landmark_position(
+            pose_landmarks[self.config.SHOULDER_RIGHT], frame.shape
+        )
+        ear_left = self.calculate_landmark_position(
+            pose_landmarks[self.config.EAR_LEFT], frame.shape
+        )
+        ear_right = self.calculate_landmark_position(
+            pose_landmarks[self.config.EAR_RIGHT], frame.shape
+        )
+        nose = self.calculate_landmark_position(
+            pose_landmarks[self.config.NOSE], frame.shape
+        )
+        neck = self.calculate_landmark_position(
+            pose_landmarks[self.config.NECK], frame.shape
+        )
+
+        # Draw lines between landmarks
+        cv2.line(frame, shoulder_left, shoulder_right, (0, 0, 255), 2)  # Shoulder line
+        cv2.line(frame, ear_left, ear_right, (0, 0, 255), 2)  # Ear line
+        cv2.line(frame, nose, neck, (0, 0, 255), 2)  # Head forward line
+
+        # Draw severity indicator with color gradient
+        severity_color = (
+            int(255 * severity),  # Red component
+            0,  # Green component
+            int(255 * (1 - severity))  # Blue component
+        )
+        severity_text = f"Slouching Severity: {severity:.2f}"
+        cv2.putText(frame, severity_text, (10, 130),
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, severity_color, 2)
+
+        # Draw posture guide
+        if severity > 0.5:
+            cv2.putText(frame, "Sit up straight!", (10, 170),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+    def _display_alerts(self, frame, nail_biting_detected, hair_pulling_detected, slouching_detected):
         """Display habit detection alerts"""
         if nail_biting_detected:
             cv2.putText(frame, "Nail Biting Detected!", (50, 50),
@@ -146,6 +203,10 @@ class Camera:
         
         if hair_pulling_detected:
             cv2.putText(frame, "Hair Pulling Detected!", (50, 90),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        
+        if slouching_detected:
+            cv2.putText(frame, "Slouching Detected!", (50, 130),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
     def start_camera(self):
@@ -177,12 +238,21 @@ class Camera:
                     face_landmarks = self._process_face_landmarks(frame, face_landmark)
 
             # Process hand landmarks and detect habits
+            nail_biting = False
+            hair_pulling = False
             if hands_results.multi_hand_landmarks and face_landmarks:
                 for hand_landmarks in hands_results.multi_hand_landmarks:
                     nail_biting, hair_pulling = self._process_hand_landmarks(
                         frame, hand_landmarks, face_landmarks
                     )
-                    self._display_alerts(frame, nail_biting, hair_pulling)
+
+            # Check for slouching
+            slouching = False
+            if pose_results.pose_landmarks:
+                slouching, _ = self._check_slouching(frame, pose_results.pose_landmarks.landmark)
+
+            # Display all alerts
+            self._display_alerts(frame, nail_biting, hair_pulling, slouching)
 
             # Display output and check for exit
             cv2.imshow('HabitBreaker', frame)
@@ -191,8 +261,4 @@ class Camera:
 
         # Cleanup
         cap.release()
-        cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    camera = Camera()
-    camera.start_camera()
+        cv2.destroyAllWindows() 

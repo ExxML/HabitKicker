@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "habitbreaker"
+version = "0.1.0"
+description = "A computer vision application to detect and break unwanted habits"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+dependencies = [
+    "opencv-python>=4.8.0",
+    "mediapipe>=0.10.0",
+    "numpy>=1.24.0",
+]
+
+[project.scripts]
+habitbreaker = "habitbreaker.main:main"
+
+[tool.setuptools]
+packages = ["habitbreaker"] 
