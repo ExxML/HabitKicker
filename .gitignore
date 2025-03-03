@@ -1,5 +1,2 @@
 TODO.md
-habitbreaker/__pycache__/
-habitbreaker/config/__pycache__/
-habitbreaker/detectors/__pycache__/
-habitbreaker/utils/__pycache__/
+**/__pycache__/
