@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "habitbreaker"
 version = "0.1.0"
-description = "A computer vision application to detect and break unwanted habits"
+description = "A computer vision application to detect and break unwanted habits like nail-biting, hair-pulling, and slouching using posture analysis"
 readme = "README.md"
 requires-python = ">=3.7"
 license = {text = "MIT"}

@@ -7,7 +7,8 @@ A computer vision application that helps detect and break unwanted habits like n
 - Real-time face and hand landmark detection
 - Nail-biting detection
 - Hair-pulling detection
-- Slouching detection for seated users
+- Slouch detection with calibration
+- Adjustable slouch sensitivity
 - Toggle landmark visualization
 - Simple and intuitive interface
 
@@ -24,7 +25,8 @@ HabitBreaker/
 │   │   └── landmark_config.py
 │   ├── detectors/               # Habit detection
 │   │   ├── __init__.py
-│   │   └── habit_detector.py
+│   │   ├── habit_detector.py
+│   │   └── slouch_detector.py   # Posture analysis
 │   └── utils/                   # Utilities
 │       ├── __init__.py
 │       └── mediapipe_handler.py
@@ -64,11 +66,35 @@ python -m habitbreaker.main
 
 2. Controls:
    - Press 'q' to quit the application
+   - Press 'c' to calibrate posture detection
+   - Press '+' to increase slouch detection threshold (less sensitive)
+   - Press '-' to decrease slouch detection threshold (more sensitive)
 
 3. The application will detect and alert you about:
    - Nail biting (fingers near mouth)
    - Hair pulling (fingers near forehead)
-   - Slouching (poor upper body posture)
+   - Slouching (deviation from calibrated posture)
+
+4. Slouch Detection:
+   - When you first start the application, it will prompt you to sit up straight for calibration
+   - The calibration process takes a few seconds to establish your proper posture
+   - After calibration, the application will alert you when you slouch
+   - You can recalibrate at any time by pressing 'c'
+   - The default slouch detection threshold is 15% - you can adjust this with '+' and '-' keys
+   - A lower threshold makes detection more sensitive, a higher threshold makes it less sensitive
+   - The slouch detection works by analyzing upper body posture (shoulders, neck, and head position)
+
+## How Slouch Detection Works
+
+The slouch detection feature uses MediaPipe's pose estimation to track key upper body landmarks:
+
+1. **Calibration**: During calibration, the application records your proper posture as a reference.
+2. **Analysis**: While running, it continuously compares your current posture to the calibrated reference.
+3. **Detection**: Slouching is detected based on three main factors:
+   - Vertical change in shoulder position (40% weight)
+   - Change in neck-to-nose angle (30% weight)
+   - Change in distance between nose and neck (30% weight)
+4. **Sensitivity**: The threshold determines how much deviation is allowed before alerting you.
 
 ## Requirements
 

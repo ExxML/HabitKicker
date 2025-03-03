@@ -14,12 +14,4 @@ class LandmarkConfig:
     # Hand landmarks
     FINGERTIP_LANDMARKS = [4, 8, 12, 16, 20]  # Fingertips
     THUMB_TIP = 4  # Thumb tip
-    OTHER_FINGERTIPS = [8, 12, 16, 20]  # Other fingertips
-
-    # Pose landmarks for upper body slouching detection
-    SHOULDER_LEFT = 11
-    SHOULDER_RIGHT = 12
-    EAR_LEFT = 7
-    EAR_RIGHT = 8
-    NOSE = 0  # Added for head position reference
-    NECK = 9  # Added for neck position reference 
+    OTHER_FINGERTIPS = [8, 12, 16, 20]  # Other fingertips 
