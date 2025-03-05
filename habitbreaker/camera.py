@@ -2,20 +2,24 @@
 
 import cv2
 import numpy as np
+import time
 from habitbreaker.config.landmark_config import LandmarkConfig
 from habitbreaker.detectors.habit_detector import HabitDetector
 from habitbreaker.detectors.slouch_detector import SlouchDetector
 from habitbreaker.utils.mediapipe_handler import MediapipeHandler
+from habitbreaker.utils.screen_overlay import ScreenOutline
 
 class Camera:
-    def __init__(self):
+    def __init__(self, nail_biting_threshold = 20, hair_pulling_threshold = 50, slouch_threshold = 15):
         self.mp_handler = MediapipeHandler()
-        self.habit_detector = HabitDetector()
-        self.slouch_detector = SlouchDetector()
+        self.habit_detector = HabitDetector(nail_biting_threshold, hair_pulling_threshold)
+        self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
         self.config = LandmarkConfig()
         self.show_landmarks = True
         self.cap = None
         self.is_calibrating = False
+        self.calibration_complete_time = 0  # Track when calibration completed
+        self.screen_outline = ScreenOutline()
 
     def _initialize_camera(self):
         """Initialize camera with specific settings"""
@@ -156,6 +160,13 @@ class Camera:
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         
         # Slouching alert is handled by the slouch detector itself
+        
+        # Update screen outline with habit status
+        self.screen_outline.update_habit_status(
+            nail_biting_detected, 
+            hair_pulling_detected, 
+            slouching_detected
+        )
 
     def _process_pose_landmarks(self, frame, pose_landmark):
         """Process and draw pose landmarks for slouch detection"""
@@ -173,8 +184,17 @@ class Camera:
             calibration_complete = self.slouch_detector.update_calibration(frame, pose_landmark)
             if calibration_complete:
                 self.is_calibrating = False
-                cv2.putText(frame, "Calibration Complete!", (50, 210),
-                           cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                self.calibration_complete_time = time.time()  # Record when calibration completed
+        
+        # Show "Calibration Complete!" message for 2seconds after calibration
+        if not self.is_calibrating and time.time() - self.calibration_complete_time < 2:
+            text = "Calibration Complete!"
+            text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
+            text_x = int((frame.shape[1] - text_size[0]) / 2)
+            text_y = int(frame.shape[0] / 2)
+            
+            cv2.putText(frame, text, (text_x, text_y),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
         
         # Check for slouching
         return self.slouch_detector.check_slouching(frame, pose_landmark)
@@ -246,5 +266,6 @@ class Camera:
                 self.start_calibration()
 
         # Cleanup
+        self.screen_outline.cleanup()
         cap.release()
         cv2.destroyAllWindows() 

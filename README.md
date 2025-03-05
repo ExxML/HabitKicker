@@ -8,7 +8,7 @@ A computer vision application that helps detect and break unwanted habits like n
 - Nail-biting detection
 - Hair-pulling detection
 - Slouch detection with calibration
-- Adjustable slouch sensitivity
+- Screen outline alerts for persistent habits
 - Toggle landmark visualization
 - Simple and intuitive interface
 
@@ -29,7 +29,8 @@ HabitBreaker/
 │   │   └── slouch_detector.py   # Posture analysis
 │   └── utils/                   # Utilities
 │       ├── __init__.py
-│       └── mediapipe_handler.py
+│       ├── mediapipe_handler.py
+│       └── screen_overlay.py    # Screen outline functionality
 ├── pyproject.toml               # Modern Python packaging
 └── README.md                    # Documentation
 ```
@@ -67,8 +68,6 @@ python -m habitbreaker.main
 2. Controls:
    - Press 'q' to quit the application
    - Press 'c' to calibrate posture detection
-   - Press '+' to increase slouch detection threshold (less sensitive)
-   - Press '-' to decrease slouch detection threshold (more sensitive)
 
 3. The application will detect and alert you about:
    - Nail biting (fingers near mouth)
@@ -80,9 +79,15 @@ python -m habitbreaker.main
    - The calibration process takes a few seconds to establish your proper posture
    - After calibration, the application will alert you when you slouch
    - You can recalibrate at any time by pressing 'c'
-   - The default slouch detection threshold is 15% - you can adjust this with '+' and '-' keys
-   - A lower threshold makes detection more sensitive, a higher threshold makes it less sensitive
+   - The default slouch detection threshold is 15%
    - The slouch detection works by analyzing upper body posture (shoulders, neck, and head position)
+
+5. Screen Outline Alerts:
+   - When a habit is detected consistently for 3+ seconds, a yellow outline appears around your screen
+   - Detection messages are displayed in the top-left corner of the screen
+   - The outline disappears after no habits are detected for 3 seconds
+   - You can continue using your computer normally while the outline is displayed
+   - The outline is semi-transparent and designed to be noticeable but not obtrusive
 
 ## How Slouch Detection Works
 
@@ -98,7 +103,7 @@ The slouch detection feature uses MediaPipe's pose estimation to track key upper
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.7+ up to 3.10
 - OpenCV
 - MediaPipe
 - NumPy

@@ -5,7 +5,7 @@ import cv2
 import time
 
 class SlouchDetector:
-    def __init__(self, threshold_percentage = 10):
+    def __init__(self, threshold_percentage):
         self.calibrated = False
         self.calibration_landmarks = None
         self.threshold_percentage = threshold_percentage
@@ -61,10 +61,16 @@ class SlouchDetector:
     def _draw_calibration_countdown(self, frame, remaining):
         """Draw countdown UI during calibration preparation"""
         h, w, _ = frame.shape
+        
+        text = f"Sit up straight! Calibration in {int(remaining)+1}..."
+        text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
+        text_x = int((w - text_size[0]) / 2)
+        text_y = int(h / 2)
+        
         cv2.putText(
             frame, 
-            f"Sit up straight! Calibration in {int(remaining)+1}...", 
-            (int(w/2) - 200, int(h/2)), 
+            text, 
+            (text_x, text_y), 
             cv2.FONT_HERSHEY_SIMPLEX, 
             1, 
             (0, 255, 255), 
@@ -76,10 +82,15 @@ class SlouchDetector:
         h, w, _ = frame.shape
         
         # Draw text
+        text = "Calibrating posture... Stay still and sit up straight"
+        text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
+        text_x = int((w - text_size[0]) / 2)
+        text_y = int(h / 2) - 30
+        
         cv2.putText(
             frame, 
-            "Calibrating posture... Stay still and sit up straight", 
-            (int(w/2) - 250, int(h/2) - 30), 
+            text, 
+            (text_x, text_y), 
             cv2.FONT_HERSHEY_SIMPLEX, 
             0.8, 
             (0, 255, 255), 
