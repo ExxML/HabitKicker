@@ -1,10 +1,10 @@
-"""Main entry point for the HabitBreaker application"""
+"""Main entry point for the HabitKicker application"""
 
 import cv2
-from habitbreaker.camera import Camera
+from habitkicker.camera import Camera
 
 def main():
-    """Main function to run the HabitBreaker application"""
+    """Main function to run the HabitKicker application"""
     camera = Camera()
     try:
         camera.start_camera()

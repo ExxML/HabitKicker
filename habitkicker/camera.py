@@ -1,16 +1,15 @@
 """Main class for camera handling and habit detection"""
 
 import cv2
-import numpy as np
 import time
-from habitbreaker.config.landmark_config import LandmarkConfig
-from habitbreaker.detectors.habit_detector import HabitDetector
-from habitbreaker.detectors.slouch_detector import SlouchDetector
-from habitbreaker.utils.mediapipe_handler import MediapipeHandler
-from habitbreaker.utils.screen_overlay import ScreenOutline
+from habitkicker.config.landmark_config import LandmarkConfig
+from habitkicker.detectors.habit_detector import HabitDetector
+from habitkicker.detectors.slouch_detector import SlouchDetector
+from habitkicker.utils.mediapipe_handler import MediapipeHandler
+from habitkicker.utils.screen_overlay import ScreenOutline
 
 class Camera:
-    def __init__(self, nail_biting_threshold = 20, hair_pulling_threshold = 50, slouch_threshold = 15):
+    def __init__(self, nail_biting_threshold = 30, hair_pulling_threshold = 50, slouch_threshold = 15):
         self.mp_handler = MediapipeHandler()
         self.habit_detector = HabitDetector(nail_biting_threshold, hair_pulling_threshold)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
@@ -196,6 +195,11 @@ class Camera:
             cv2.putText(frame, text, (text_x, text_y),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
         
+        # If not calibrated and not currently calibrating, show a message about posture percentage
+        if not self.slouch_detector.calibrated and not self.is_calibrating:
+            cv2.putText(frame, "Posture: N/A (Calibration needed)", (50, 130),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        
         # Check for slouching
         return self.slouch_detector.check_slouching(frame, pose_landmark)
 
@@ -258,7 +262,7 @@ class Camera:
                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
 
             # Display output and check for exit or calibration
-            cv2.imshow('HabitBreaker', frame)
+            cv2.imshow('HabitKicker', frame)
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 break
@@ -266,6 +270,15 @@ class Camera:
                 self.start_calibration()
 
         # Cleanup
-        self.screen_outline.cleanup()
-        cap.release()
-        cv2.destroyAllWindows() 
+        try:
+            # First release OpenCV resources
+            cap.release()
+            cv2.destroyAllWindows()
+        except Exception as e:
+            print(f"Warning during OpenCV cleanup: {e}")
+
+        # Then cleanup screen outline (don't wait for it)
+        try:
+            self.screen_outline.cleanup()
+        except Exception as e:
+            print(f"Warning during screen outline cleanup: {e}") 

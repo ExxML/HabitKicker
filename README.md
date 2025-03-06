@@ -1,4 +1,4 @@
-# HabitBreaker
+# HabitKicker
 
 A computer vision application that helps detect and break unwanted habits like nail-biting, hair-pulling, and slouching using MediaPipe's face, hand, and pose tracking.
 
@@ -15,8 +15,8 @@ A computer vision application that helps detect and break unwanted habits like n
 ## Project Structure
 
 ```
-HabitBreaker/
-├── habitbreaker/                # Main package
+HabitKicker/
+├── habitkicker/                # Main package
 │   ├── __init__.py
 │   ├── main.py                  # Entry point
 │   ├── camera.py                # Main camera interface
@@ -51,7 +51,7 @@ pip install -e .
 pip install opencv-python mediapipe numpy
 
 # Run the application as a module
-python -m habitbreaker.main
+python -m habitkicker.main
 ```
 
 ## Usage
@@ -59,10 +59,10 @@ python -m habitbreaker.main
 1. Run the application using one of these methods:
    ```bash
    # If installed as a package
-   habitbreaker
+   habitkicker
    
    # Or directly as a module
-   python -m habitbreaker.main
+   python -m habitkicker.main
    ```
 
 2. Controls:

@@ -173,9 +173,11 @@ class SlouchDetector:
         # Calculate slouch metrics
         slouch_detected, slouch_percentage = self._calculate_slouch(current_landmarks)
         
-        # Draw slouch indicator if detected
+        # Always draw the slouch percentage
         if slouch_detected:
             self._draw_slouch_alert(frame, slouch_percentage)
+        else:
+            self._draw_slouch_percentage(frame, slouch_percentage)
             
         return slouch_detected
     
@@ -228,10 +230,10 @@ class SlouchDetector:
         dist_ratio = curr_nose_neck_dist / cal_nose_neck_dist if cal_nose_neck_dist > 0 else 1
         
         # Combine metrics to calculate slouch percentage
-        # Weight the metrics: shoulder position (40%), angle change (30%), distance ratio (30%)
-        shoulder_factor = 0.4
+        # Weight the metrics: shoulder position (60%), angle change (30%), distance ratio (10%)
+        shoulder_factor = 0.6
         angle_factor = 0.3
-        distance_factor = 0.3
+        distance_factor = 0.1
         
         # Calculate reference distance for shoulder movement percentage
         ref_distance = abs(self.calibration_landmarks['nose'][1] - 
@@ -244,9 +246,9 @@ class SlouchDetector:
         
         # Combine metrics
         slouch_percentage = (
-            shoulder_percentage * shoulder_factor + 
-            angle_percentage * angle_factor + 
-            distance_percentage * distance_factor
+            shoulder_percentage * shoulder_factor + # Shoulder detection
+            angle_percentage * angle_factor + # Neck angle detection
+            distance_percentage * distance_factor # Nose-neck distance detection
         )
         
         # Detect slouching if the percentage exceeds the threshold
@@ -261,10 +263,10 @@ class SlouchDetector:
         # Draw alert text
         cv2.putText(
             frame, 
-            f"Slouching Detected! ({int(slouch_percentage)}%)", 
+            f"Slouching: {int(slouch_percentage)}% (Threshold: {self.threshold_percentage}%)", 
             (50, 130), 
             cv2.FONT_HERSHEY_SIMPLEX, 
-            1, 
+            0.8, 
             (0, 0, 255), 
             2
         )
@@ -277,5 +279,23 @@ class SlouchDetector:
             cv2.FONT_HERSHEY_SIMPLEX, 
             0.8, 
             (0, 0, 255), 
+            2
+        )
+    
+    def _draw_slouch_percentage(self, frame, slouch_percentage):
+        """Draw slouch percentage on the frame when not slouching"""
+        # Calculate color based on how close to threshold (green to yellow)
+        ratio = min(slouch_percentage / self.threshold_percentage, 0.9)  # Cap at 90% of threshold
+        # Green (0,255,0) to Yellow (0,255,255)
+        color = (0, 255, int(255 * ratio))
+        
+        # Draw percentage text
+        cv2.putText(
+            frame, 
+            f"Posture: {int(slouch_percentage)}% (Threshold: {self.threshold_percentage}%)", 
+            (50, 130), 
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            0.8, 
+            color, 
             2
         ) 

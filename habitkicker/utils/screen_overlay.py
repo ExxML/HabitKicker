@@ -1,7 +1,5 @@
 """Module for creating screen overlays and outlines"""
 
-import cv2
-import numpy as np
 import time
 import threading
 import tkinter as tk
@@ -21,13 +19,14 @@ class ScreenOutline:
         self.windows = []
         self.current_color = None
         self.is_showing = False
+        self.shutdown_requested = False
         self.habit_status = {
             'nail_biting': {'active': False, 'start_time': 0},
             'hair_pulling': {'active': False, 'start_time': 0},
             'slouching': {'active': False, 'start_time': 0}
         }
         self.detection_threshold = 3.0  # seconds
-        self.clear_threshold = 3.0  # seconds
+        self.clear_threshold = 2.0  # seconds
         self.last_detection_time = 0
         self.message_text = ""
         
@@ -47,6 +46,9 @@ class ScreenOutline:
         
         # Create outline windows (top, right, bottom, left)
         self._create_outline_windows(screen_width, screen_height)
+        
+        # Check for shutdown periodically
+        self.root.after(100, self._check_shutdown)
         
         # Start the tkinter main loop
         self.root.mainloop()
@@ -271,16 +273,16 @@ class ScreenOutline:
             if self.is_showing and immediate_messages:
                 self.message_text = "\n".join(immediate_messages)
                 self.update_message(self.message_text)
-            # Otherwise, clear message if no habits are active for 3+ seconds and no immediate messages
+            # Otherwise, clear message if no habits are active for 2+ seconds and no immediate messages
             elif self.message_text and not immediate_messages:
                 self.message_text = ""
                 self.update_message(self.message_text)
             
-            # If any habit is currently detected (but not for 3 seconds yet),
+            # If any habit is currently detected (but not for 2 seconds yet),
             # keep the outline visible and reset the last detection time
             if any_habit_detected and self.is_showing:
                 self.last_detection_time = current_time
-            # Otherwise, check if we should hide the outline (after 3 seconds of no detection)
+            # Otherwise, check if we should hide the outline (after 2 seconds of no detection)
             elif not any_habit_detected and current_time - self.last_detection_time >= self.clear_threshold:
                 if self.is_showing:
                     self.hide_outline()
@@ -288,5 +290,46 @@ class ScreenOutline:
     def cleanup(self):
         """Clean up resources"""
         if self.root:
+            try:
+                # Flag shutdown
+                self.shutdown_requested = True
+            except Exception as e:
+                print(f"Warning during cleanup: {e}")
+    
+    def _check_shutdown(self):
+        """Check if shutdown was requested and schedule next check"""
+        if self.shutdown_requested:
+            # Call destroy_root which will handle the shutdown safely
+            self._destroy_root()
+            return  # Don't schedule another check
+        else:
+            # Schedule next check
+            if self.root:
+                self.root.after(100, self._check_shutdown)
+    
+    def _destroy_root(self):
+        """Safely destroy the root window from the main thread"""
+        try:
+            # Hide all windows first
+            for window in self.windows:
+                window.withdraw()
+            
+            # Schedule actual destruction after a short delay
+            # This gives time for any pending operations to complete
+            self.root.after(200, self._final_destroy)
+        except Exception as e:
+            print(f"Warning during window destruction: {e}")
+        
+    def _final_destroy(self):
+        """Final destruction of tkinter resources"""
+        try:
+            # Destroy all windows
+            for window in self.windows:
+                window.destroy()
+            self.windows = []
+            
+            # Quit and destroy root
             self.root.quit()
-            self.root.destroy() 
+            self.root.destroy()
+        except Exception as e:
+            print(f"Warning during final destruction: {e}") 

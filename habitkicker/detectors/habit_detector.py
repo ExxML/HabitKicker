@@ -1,7 +1,7 @@
 """Class for detecting habits based on landmark positions"""
 
 import numpy as np
-from habitbreaker.config.landmark_config import LandmarkConfig
+from habitkicker.config.landmark_config import LandmarkConfig
 
 class HabitDetector:
     def __init__(self, nail_pulling_threshold, hair_pulling_threshold, finger_threshold = 50):

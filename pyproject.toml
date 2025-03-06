@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "habitbreaker"
+name = "habitkicker"
 version = "0.1.0"
 description = "A computer vision application to detect and break unwanted habits like nail-biting, hair-pulling, and slouching using posture analysis"
 readme = "README.md"
@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-habitbreaker = "habitbreaker.main:main"
+habitkicker = "habitkicker.main:main"
 
 [tool.setuptools]
-packages = ["habitbreaker"] 
+packages = ["habitkicker"] 
