@@ -9,7 +9,7 @@ from habitkicker.utils.mediapipe_handler import MediapipeHandler
 from habitkicker.utils.screen_overlay import ScreenOutline
 
 class Camera:
-    def __init__(self, nail_biting_threshold = 30, hair_pulling_threshold = 50, slouch_threshold = 15):
+    def __init__(self, nail_biting_threshold = 40, hair_pulling_threshold = 50, slouch_threshold = 15):
         self.mp_handler = MediapipeHandler()
         self.habit_detector = HabitDetector(nail_biting_threshold, hair_pulling_threshold)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)

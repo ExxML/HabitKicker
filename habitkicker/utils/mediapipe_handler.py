@@ -27,4 +27,4 @@ class MediapipeHandler:
             min_detection_confidence = self.CONFIDENCE,
             min_tracking_confidence = self.CONFIDENCE,
             model_complexity = 1  # Use medium complexity for better accuracy
-        ) 
+        )

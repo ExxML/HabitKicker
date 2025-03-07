@@ -73,7 +73,7 @@ class SlouchDetector:
             (text_x, text_y), 
             cv2.FONT_HERSHEY_SIMPLEX, 
             1, 
-            (0, 255, 255), 
+            (0, 255,0), 
             2
         )
     
@@ -93,7 +93,7 @@ class SlouchDetector:
             (text_x, text_y), 
             cv2.FONT_HERSHEY_SIMPLEX, 
             0.8, 
-            (0, 255, 255), 
+            (0, 255, 0), 
             2
         )
         
