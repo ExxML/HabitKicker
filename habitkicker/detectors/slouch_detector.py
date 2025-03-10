@@ -3,6 +3,10 @@
 import numpy as np
 import cv2
 import time
+import os
+import json
+import pickle
+from pathlib import Path
 
 class SlouchDetector:
     def __init__(self, threshold_percentage):
@@ -11,7 +15,21 @@ class SlouchDetector:
         self.threshold_percentage = threshold_percentage
         self.calibration_countdown = 0
         self.calibration_start_time = 0
-        self.calibration_duration = 5  # seconds
+        self.calibration_duration = 3.0  # seconds
+        
+        # New variables for collecting posture data during calibration
+        self.calibration_samples = []
+        self.last_sample_time = 0
+        self.sample_interval = 0.1  # Collect samples every 100 ms
+        
+        # Path for saving calibration data
+        # Get the project root directory (assuming we're in habitkicker/detectors)
+        project_root = Path(__file__).parent.parent.parent
+        self.calibration_dir = project_root / "data"
+        self.calibration_file = self.calibration_dir / "posture_calibration.pkl"
+        
+        # Try to load existing calibration data
+        self.load_calibration()
         
     def start_calibration(self):
         """Start the calibration process"""
@@ -19,6 +37,7 @@ class SlouchDetector:
         self.calibration_landmarks = None
         self.calibration_countdown = 3  # 3 second countdown before calibration
         self.calibration_start_time = time.time()
+        self.calibration_samples = []  # Reset samples
         
     def update_calibration(self, frame, pose_landmarks):
         """Update calibration process and draw UI elements"""
@@ -33,6 +52,8 @@ class SlouchDetector:
                 # Countdown finished, start actual calibration
                 self.calibration_countdown = 0
                 self.calibration_start_time = current_time
+                self.calibration_samples = []  # Reset samples
+                self.last_sample_time = current_time
                 return False
             
             # Draw countdown
@@ -44,19 +65,62 @@ class SlouchDetector:
         if elapsed < self.calibration_duration:
             # Still calibrating
             progress = int((elapsed / self.calibration_duration) * 100)
-            self._draw_calibration_progress(frame, progress)
+            
+            # Collect samples at regular intervals
+            if current_time - self.last_sample_time >= self.sample_interval and pose_landmarks:
+                self.last_sample_time = current_time
+                landmarks = self._extract_posture_landmarks(pose_landmarks)
+                if landmarks:
+                    self.calibration_samples.append(landmarks)
+                    # Update the progress text to show samples collected
+                    self._draw_calibration_progress(frame, progress, len(self.calibration_samples))
+                else:
+                    self._draw_calibration_progress(frame, progress, len(self.calibration_samples))
+            else:
+                self._draw_calibration_progress(frame, progress, len(self.calibration_samples))
+                
             return False
         else:
             # Calibration complete
-            if not self.calibrated:
-                self._complete_calibration(pose_landmarks)
+            if not self.calibrated and len(self.calibration_samples) > 0:
+                self._complete_calibration()
             return True
     
-    def _complete_calibration(self, pose_landmarks):
-        """Complete the calibration process by storing reference landmarks"""
-        # Store the upper body landmarks for reference
-        self.calibration_landmarks = self._extract_posture_landmarks(pose_landmarks)
+    def _complete_calibration(self):
+        """Complete the calibration process by averaging collected landmarks"""
+        if len(self.calibration_samples) == 0:
+            print("Warning: No calibration samples collected")
+            return
+            
+        # Average all collected samples
+        avg_landmarks = {}
+        
+        # Initialize with the structure of the first sample
+        for key in self.calibration_samples[0].keys():
+            # Each landmark has 3 coordinates (x, y, z)
+            avg_landmarks[key] = [0, 0, 0]
+        
+        # Sum all samples
+        for sample in self.calibration_samples:
+            for key, coords in sample.items():
+                for i in range(3):  # x, y, z
+                    avg_landmarks[key][i] += coords[i]
+        
+        # Divide by number of samples to get average
+        for key in avg_landmarks.keys():
+            for i in range(3):  # x, y, z
+                avg_landmarks[key][i] /= len(self.calibration_samples)
+            
+            # Convert lists back to tuples
+            avg_landmarks[key] = tuple(avg_landmarks[key])
+        
+        # Store the averaged landmarks
+        self.calibration_landmarks = avg_landmarks
         self.calibrated = True
+        print(f"Calibration complete with {len(self.calibration_samples)} samples")
+        
+        # Save the calibration data
+        self.save_calibration()
     
     def _draw_calibration_countdown(self, frame, remaining):
         """Draw countdown UI during calibration preparation"""
@@ -77,7 +141,7 @@ class SlouchDetector:
             2
         )
     
-    def _draw_calibration_progress(self, frame, progress):
+    def _draw_calibration_progress(self, frame, progress, samples_count=0):
         """Draw progress bar during calibration"""
         h, w, _ = frame.shape
         
@@ -298,4 +362,45 @@ class SlouchDetector:
             0.8, 
             color, 
             2
-        ) 
+        )
+    
+    def save_calibration(self):
+        """Save calibration data to a file"""
+        if not self.calibrated or self.calibration_landmarks is None:
+            print("No calibration data to save")
+            return False
+            
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs(self.calibration_dir, exist_ok=True)
+            
+            # Save calibration data
+            with open(self.calibration_file, 'wb') as f:
+                pickle.dump(self.calibration_landmarks, f)
+                
+            print(f"Calibration data saved to {self.calibration_file}")
+            return True
+        except Exception as e:
+            print(f"Error saving calibration data: {e}")
+            return False
+    
+    def load_calibration(self):
+        """Load calibration data from a file"""
+        if not self.calibration_file.exists():
+            print("No calibration file found")
+            return False
+            
+        try:
+            with open(self.calibration_file, 'rb') as f:
+                self.calibration_landmarks = pickle.load(f)
+                
+            if self.calibration_landmarks:
+                self.calibrated = True
+                print(f"Calibration data loaded from {self.calibration_file}")
+                return True
+            else:
+                print("Calibration file exists but contains no data")
+                return False
+        except Exception as e:
+            print(f"Error loading calibration data: {e}")
+            return False 

@@ -19,6 +19,10 @@ class Camera:
         self.is_calibrating = False
         self.calibration_complete_time = 0  # Track when calibration completed
         self.screen_outline = ScreenOutline()
+        
+        # Track if calibration was loaded from file
+        self.calibration_loaded = self.slouch_detector.calibrated
+        self.calibration_loaded_message_time = 0
 
     def _initialize_camera(self):
         """Initialize camera with specific settings"""
@@ -212,62 +216,82 @@ class Camera:
         """Main method to start camera and process frames"""
         cap = self._initialize_camera()
         self.cap = cap
+        
+        # Set time for showing calibration loaded message
+        if self.calibration_loaded:
+            self.calibration_loaded_message_time = time.time()
 
-        # Start with calibration
-        self.start_calibration()
+        # Start with calibration if not already calibrated
+        if not self.slouch_detector.calibrated:
+            self.start_calibration()
 
-        while cap.isOpened():
+        running = True
+        while running:
             # Get and process frame
             ret, frame = cap.read()
             if not ret:
                 break
-            
-            # Convert and process frame with MediaPipe
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            hands_results = self.mp_handler.hands.process(rgb_frame)
-            face_results = self.mp_handler.face_mesh.process(rgb_frame)
-            pose_results = self.mp_handler.pose.process(rgb_frame)
 
-            # Process face landmarks
-            face_landmarks = {}
-            if face_results.multi_face_landmarks:
-                for face_landmark in face_results.multi_face_landmarks:
-                    face_landmarks = self._process_face_landmarks(frame, face_landmark)
+            try:
+                # Convert and process frame with MediaPipe
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                hands_results = self.mp_handler.hands.process(rgb_frame)
+                face_results = self.mp_handler.face_mesh.process(rgb_frame)
+                pose_results = self.mp_handler.pose.process(rgb_frame)
 
-            # Process pose landmarks for slouch detection
-            slouching_detected = False
-            if pose_results.pose_landmarks:
-                slouching_detected = self._process_pose_landmarks(frame, pose_results.pose_landmarks)
+                # Process face landmarks
+                face_landmarks = {}
+                if face_results.multi_face_landmarks:
+                    for face_landmark in face_results.multi_face_landmarks:
+                        face_landmarks = self._process_face_landmarks(frame, face_landmark)
 
-            # Process hand landmarks and detect habits
-            nail_biting = False
-            hair_pulling = False
-            
-            if hands_results.multi_hand_landmarks and face_landmarks:
-                for hand_landmarks in hands_results.multi_hand_landmarks:
-                    # Process each hand and combine the results
-                    hand_nail_biting, hand_hair_pulling = self._process_hand_landmarks(
-                        frame, hand_landmarks, face_landmarks
-                    )
-                    # If either hand is doing the habit, mark it as detected
-                    nail_biting = nail_biting or hand_nail_biting
-                    hair_pulling = hair_pulling or hand_hair_pulling
+                # Process pose landmarks for slouch detection
+                slouching_detected = False
+                if pose_results.pose_landmarks:
+                    slouching_detected = self._process_pose_landmarks(frame, pose_results.pose_landmarks)
 
-            # Display alerts
-            self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)
+                # Process hand landmarks and detect habits
+                nail_biting = False
+                hair_pulling = False
+                
+                if hands_results.multi_hand_landmarks and face_landmarks:
+                    for hand_landmarks in hands_results.multi_hand_landmarks:
+                        # Process each hand and combine the results
+                        hand_nail_biting, hand_hair_pulling = self._process_hand_landmarks(
+                            frame, hand_landmarks, face_landmarks
+                        )
+                        # If either hand is doing the habit, mark it as detected
+                        nail_biting = nail_biting or hand_nail_biting
+                        hair_pulling = hair_pulling or hand_hair_pulling
 
-            # Display calibration instructions if not calibrated
-            if not self.slouch_detector.calibrated and not self.is_calibrating:
-                cv2.putText(frame, "Press 'c' to calibrate posture", (50, 210),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+                # Display alerts
+                self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)
 
-            # Display output and check for exit or calibration
-            cv2.imshow('HabitKicker', frame)
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
-                break
-            elif key == ord('c'):
-                self.start_calibration()
+                # Display calibration instructions if not calibrated
+                if not self.slouch_detector.calibrated and not self.is_calibrating:
+                    cv2.putText(frame, "Press 'c' to calibrate posture", (50, 210),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+                
+                # Show "Calibration Loaded!" message for 3 seconds after startup if calibration was loaded
+                if self.calibration_loaded and time.time() - self.calibration_loaded_message_time < 3:
+                    text = "Posture Calibration Loaded!"
+                    text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)[0]
+                    text_x = int((frame.shape[1] - text_size[0]) / 2)
+                    text_y = int(frame.shape[0] / 2) + 80
+                    
+                    cv2.putText(frame, text, (text_x, text_y),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+
+                # Display output and check for exit or calibration
+                cv2.imshow('HabitKicker', frame)
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord('q'):
+                    running = False
+                elif key == ord('c'):
+                    self.start_calibration()
+            except Exception as e:
+                print(f"Error processing frame: {e}")
+                time.sleep(0.5)  # Wait a bit before retrying
 
         # Cleanup
         try:
