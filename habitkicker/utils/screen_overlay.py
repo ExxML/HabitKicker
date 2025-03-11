@@ -42,6 +42,10 @@ class ScreenOutline:
         self.green_start_time = 0           # When green outline was shown
         self.green_duration = 1.0           # How long to show green outline (seconds)
         
+        # Notification window
+        self.notification_window = None
+        self.notification_visible = False
+        
         # Initialize tkinter in a separate thread
         self.init_thread = threading.Thread(target = self._init_tkinter)
         self.init_thread.daemon = True
@@ -97,6 +101,9 @@ class ScreenOutline:
         # Create message window in top-left corner
         msg_window = self._create_message_window(self.thickness + 10, 10, 400, 100)
         self.windows.append(msg_window)
+        
+        # Create notification window in top-left corner
+        self._create_notification_window(11, 11, 260, 122)
         
         # Create tint window (initially hidden)
         self._create_tint_window(width, height)
@@ -157,6 +164,43 @@ class ScreenOutline:
         
         return window
     
+    def _create_notification_window(self, x, y, width, height):
+        """Create a notification window in the top-left corner
+        
+        Args:
+            x, y: Position coordinates
+            width, height: Dimensions of the window
+        """
+        window = Toplevel(self.root)
+        window.geometry(f"{width}x{height}+{x}+{y}")
+        window.overrideredirect(True)  # Remove window decorations
+        window.attributes("-topmost", True)  # Keep on top
+        window.attributes("-alpha", 0.9)  # Set transparency
+        
+        # Create canvas for drawing
+        canvas = Canvas(window, highlightthickness = 0, width = width, height = height)
+        canvas.pack(fill = tk.BOTH, expand = True)
+        
+        # Create notification background
+        canvas.create_rectangle(0, 0, width, height, fill = "black", outline = "gray", width = 2, tags = "bg")
+        
+        # Add title
+        canvas.create_text(10, 10, anchor = "nw", text = "HabitKicker Alert", fill = "white", 
+                          font = ("Calibri", 15, "bold"), tags = "title")
+        
+        # Add horizontal line
+        canvas.create_line(10, 35, width - 10, 35, fill = "gray", tags = "line")
+        
+        # Add message text
+        canvas.create_text(10, 45, anchor = "nw", text = "", fill = "white", 
+                          font = ("Calibri", 13), width = width - 20, tags = "notification_text")
+        
+        # Hide the window initially
+        window.withdraw()
+        
+        self.notification_window = window
+        return window
+    
     def _create_tint_window(self, width, height):
         """Create a semi-transparent window that covers the entire screen for tinting
         
@@ -210,6 +254,9 @@ class ScreenOutline:
         for window in self.windows:
             window.deiconify()
             
+        # Update notification color to match outline
+        self._update_notification_color(color)
+        
         self.is_showing = True
     
     def hide_outline(self):
@@ -221,9 +268,14 @@ class ScreenOutline:
         for window in self.windows:
             window.withdraw()
         
+        # Hide notification window
+        if self.notification_window:
+            self.notification_window.withdraw()
+            self.notification_visible = False
+        
         self.is_showing = False
     
-    def update_message(self, message, color):
+    def update_message(self, message):
         """Update the detection message
         
         Args:
@@ -236,8 +288,34 @@ class ScreenOutline:
         msg_window = self.windows[-1]
         canvas = msg_window.winfo_children()[0]
         
+        # Always set empty string to hide messages in screen overlay
+        canvas.itemconfig("message", text = "")
+        
+        # Update notification text - still show messages in notification
+        self._update_notification_text(message)
+    
+    def _update_notification_text(self, message):
+        """Update the notification window text
+        
+        Args:
+            message: Text message to display
+        """
+        if not self.root or not self.notification_window:
+            return
+            
+        canvas = self.notification_window.winfo_children()[0]
+        
         # Update text
-        canvas.itemconfig("message", text = message, fill = color)
+        canvas.itemconfig("notification_text", text = message)
+        
+        # Show or hide notification based on message content and current color
+        # Don't show notification for green outline
+        if message and not self.notification_visible and self.is_showing and self.current_color != "green2":
+            self.notification_window.deiconify()
+            self.notification_visible = True
+        elif (not message and self.notification_visible) or (self.current_color == "green2" and self.notification_visible):
+            self.notification_window.withdraw()
+            self.notification_visible = False
     
     def update_habit_status(self, nail_biting, hair_pulling, slouching):
         """Update the habit detection status and manage outline display
@@ -261,7 +339,7 @@ class ScreenOutline:
                 self.green_feedback_active = False
                 # Clear the message
                 self.message_text = ""
-                self.update_message(self.message_text, "red")
+                self.update_message(self.message_text)
                 
             # While green feedback is active, don't process other habit updates
             return
@@ -337,16 +415,16 @@ class ScreenOutline:
             
             # Update message
             self.message_text = "\n".join(messages)
-            self.update_message(self.message_text, "red")
+            self.update_message(self.message_text)
         else:
             # If outline is showing and we have immediate messages, display them
             if self.is_showing and immediate_messages:
                 self.message_text = "\n".join(immediate_messages)
-                self.update_message(self.message_text, "red")
+                self.update_message(self.message_text)
             # Otherwise, clear message if no habits are active for 3+ seconds and no immediate messages
             elif self.message_text and not immediate_messages:
                 self.message_text = ""
-                self.update_message(self.message_text, "red")
+                self.update_message(self.message_text)
             
             # If any habit is currently detected (but not for 3 seconds yet),
             # keep the outline visible and reset the last detection time
@@ -362,9 +440,10 @@ class ScreenOutline:
                     self.show_outline("green2")
                     self.green_feedback_active = True
                     self.green_start_time = current_time
-                    # Update message to provide positive feedback
-                    self.message_text = "Good job!"
-                    self.update_message(self.message_text, "green2")
+                    # Don't show notification for green feedback
+                    if self.notification_window and self.notification_visible:
+                        self.notification_window.withdraw()
+                        self.notification_visible = False
     
     def cleanup(self):
         """Clean up resources"""
@@ -393,6 +472,10 @@ class ScreenOutline:
             for window in self.windows:
                 window.withdraw()
             
+            # Hide notification window if it exists
+            if self.notification_window:
+                self.notification_window.withdraw()
+            
             # Hide tint window if it exists
             if self.tint_window:
                 self.tint_window.withdraw()
@@ -410,6 +493,11 @@ class ScreenOutline:
             for window in self.windows:
                 window.destroy()
             self.windows = []
+            
+            # Destroy notification window if it exists
+            if self.notification_window:
+                self.notification_window.destroy()
+                self.notification_window = None
             
             # Destroy tint window if it exists
             if self.tint_window:
@@ -442,4 +530,39 @@ class ScreenOutline:
         
         # Hide the tint window
         self.tint_window.withdraw()
-        self.is_tinted = False 
+        self.is_tinted = False
+
+    def _update_notification_color(self, color):
+        """Update the notification window color to match the outline
+        
+        Args:
+            color: Color name ("orange", "red", "green2", etc.)
+        """
+        if not self.root or not self.notification_window:
+            return
+            
+        canvas = self.notification_window.winfo_children()[0]
+        
+        # Update background color
+        canvas.itemconfig("bg", fill = self._get_notification_bg_color(color))
+        
+        canvas.itemconfig("title", text = "HabitKicker Alert", fill = "white")
+        canvas.itemconfig("line", fill = "gray")
+    
+    def _get_notification_bg_color(self, outline_color):
+        """Get the appropriate notification background color based on outline color
+        
+        Args:
+            outline_color: The current outline color
+            
+        Returns:
+            Appropriate background color for the notification
+        """
+        if outline_color == "orange":
+            return "#663300"  # Dark orange
+        elif outline_color == "red":
+            return "#660000"  # Dark red
+        elif outline_color == "green2":
+            return "#006600"  # Dark green
+        else:
+            return "black" 
