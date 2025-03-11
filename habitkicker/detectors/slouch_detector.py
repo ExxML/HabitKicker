@@ -351,18 +351,7 @@ class SlouchDetector:
             f"Slouching: {int(slouch_percentage)}% (Threshold: {self.threshold_percentage}%)", 
             (50, 130), 
             cv2.FONT_HERSHEY_SIMPLEX, 
-            0.8, 
-            (0, 0, 255), 
-            2
-        )
-        
-        # Draw posture correction instruction
-        cv2.putText(
-            frame, 
-            "Please sit up straight", 
-            (50, 170), 
-            cv2.FONT_HERSHEY_SIMPLEX, 
-            0.8, 
+            1, 
             (0, 0, 255), 
             2
         )
@@ -380,7 +369,7 @@ class SlouchDetector:
             f"Posture: {int(slouch_percentage)}% (Threshold: {self.threshold_percentage}%)", 
             (50, 130), 
             cv2.FONT_HERSHEY_SIMPLEX, 
-            0.8, 
+            1, 
             color, 
             2
         )

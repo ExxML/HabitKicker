@@ -4,6 +4,8 @@ import time
 import threading
 import tkinter as tk
 from tkinter import Toplevel, Canvas
+import pygame.mixer
+import os
 
 class ScreenOutline:
     def __init__(self, thickness = 10, alpha = 1):
@@ -46,6 +48,13 @@ class ScreenOutline:
         self.notification_window = None
         self.notification_visible = False
         
+        # Audio alert tracking
+        self.audio_playing = False
+        self.audio_initialized = False
+        self.beep_sound = None
+        self.tint_start_time = 0  # When the red tint was first shown
+        self.alarm_volume = 0.1  # Volume for the alarm sound
+        
         # Initialize tkinter in a separate thread
         self.init_thread = threading.Thread(target = self._init_tkinter)
         self.init_thread.daemon = True
@@ -62,6 +71,13 @@ class ScreenOutline:
         
         # Create outline windows (top, right, bottom, left)
         self._create_outline_windows(screen_width, screen_height)
+        
+        # Initialize audio
+        sound_path = os.path.join("sounds", "beep.wav")
+        if os.path.exists(sound_path):
+            self.initialize_audio(sound_path)
+        else:
+            print(f"Warning: Sound file not found at {sound_path}")
         
         # Check for shutdown periodically
         self.root.after(100, self._check_shutdown)
@@ -449,6 +465,14 @@ class ScreenOutline:
         """Clean up resources"""
         if self.root:
             try:
+                # Stop audio if it's playing
+                if self.audio_playing:
+                    self.stop_audio()
+                
+                # Clean up pygame resources
+                if self.audio_initialized:
+                    pygame.mixer.quit()
+                
                 # Flag shutdown
                 self.shutdown_requested = True
             except Exception as e:
@@ -468,6 +492,10 @@ class ScreenOutline:
     def _destroy_root(self):
         """Safely destroy the root window from the main thread"""
         try:
+            # Stop audio if it's playing
+            if self.audio_playing:
+                self.stop_audio()
+            
             # Hide all windows first
             for window in self.windows:
                 window.withdraw()
@@ -489,6 +517,12 @@ class ScreenOutline:
     def _final_destroy(self):
         """Final destruction of tkinter resources"""
         try:
+            # Clean up pygame resources
+            if self.audio_initialized:
+                pygame.mixer.quit()
+                self.audio_initialized = False
+                self.beep_sound = None
+            
             # Destroy all windows
             for window in self.windows:
                 window.destroy()
@@ -522,6 +556,13 @@ class ScreenOutline:
         # Show the tint window
         self.tint_window.deiconify()
         self.is_tinted = True
+        
+        # Record the time when the tint was shown
+        self.tint_start_time = time.time()
+        
+        # Schedule audio check
+        if self.audio_initialized:
+            self.root.after(int(self.escalation_threshold * 1000), self._check_audio_start)
 
     def hide_tint(self):
         """Hide the screen tint"""
@@ -531,6 +572,36 @@ class ScreenOutline:
         # Hide the tint window
         self.tint_window.withdraw()
         self.is_tinted = False
+        
+        # Stop audio if it's playing
+        if self.audio_playing:
+            self.stop_audio()
+
+    def _check_audio_start(self):
+        """Check if audio should start playing based on tint duration"""
+        if not self.root or not self.is_tinted:
+            return
+        
+        current_time = time.time()
+        # If tint has been showing for escalation_threshold seconds, start audio
+        if current_time - self.tint_start_time >= self.escalation_threshold and self.is_tinted:
+            if self.audio_initialized and not self.audio_playing:
+                self.start_audio()
+                # Schedule the beep to play repeatedly
+                self._play_beep_loop()
+
+    def _play_beep_loop(self):
+        """Play the beep sound in a loop while audio is playing"""
+        if not self.root or not self.audio_playing:
+            return
+        
+        # Play the beep sound
+        if self.beep_sound:
+            self.beep_sound.play()
+        
+        # Schedule next beep if audio is still playing
+        if self.audio_playing:
+            self.root.after(500, self._play_beep_loop)  # Play every second
 
     def _update_notification_color(self, color):
         """Update the notification window color to match the outline
@@ -565,4 +636,76 @@ class ScreenOutline:
         elif outline_color == "green2":
             return "#006600"  # Dark green
         else:
-            return "black" 
+            return "black"
+
+    def play_beep(self):
+        """Play the beep sound"""
+        if not self.root or not self.beep_sound:
+            return
+        
+        # Play the beep sound
+        self.beep_sound.play()
+
+    def stop_beep(self):
+        """Stop the beep sound"""
+        if not self.root or not self.beep_sound:
+            return
+        
+        # Stop the beep sound
+        self.beep_sound.stop()
+
+    def start_audio(self):
+        """Start the audio playback"""
+        if not self.root or not self.beep_sound:
+            return
+        
+        # Start the audio playback
+        self.audio_playing = True
+        # The actual sound playing is handled by _play_beep_loop
+
+    def stop_audio(self):
+        """Stop the audio playback"""
+        if not self.root or not self.beep_sound:
+            return
+        
+        # Stop the audio playback
+        self.audio_playing = False
+        if self.beep_sound:
+            self.beep_sound.stop()
+
+    def is_audio_playing(self):
+        """Check if the audio is currently playing"""
+        return self.audio_playing
+
+    def is_audio_initialized(self):
+        """Check if the audio is initialized"""
+        return self.audio_initialized
+
+    def initialize_audio(self, sound_path):
+        """Initialize the audio playback"""
+        if not self.root or not sound_path:
+            return
+        
+        # Initialize pygame mixer
+        pygame.mixer.init()
+        
+        # Load the sound file
+        self.beep_sound = pygame.mixer.Sound(sound_path)
+        self.beep_sound.set_volume(self.alarm_volume)
+
+        # Mark audio as initialized
+        self.audio_initialized = True
+
+    def update_audio_state(self):
+        """Update the audio state based on the current outline color"""
+        if not self.root or not self.beep_sound:
+            return
+        
+        # Check if the current outline color is red
+        if self.current_color == "red":
+            # Start the audio playback if it's not already playing
+            if not self.audio_playing:
+                self.start_audio()
+        else:
+            # Stop the audio playback if it's playing
+            self.stop_audio() 
