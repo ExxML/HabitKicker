@@ -27,6 +27,12 @@ class SlouchDetector:
         self.calibration_dir = project_root / "data"
         self.calibration_file = self.calibration_dir / "posture_calibration.pkl"
         
+        # Performance optimization: cache for calculations
+        self.last_slouch_calculation_time = 0
+        self.slouch_calculation_interval = 0.1  # Calculate slouch every 100ms
+        self.last_slouch_percentage = 0
+        self.last_slouch_detected = False
+        
         # Try to load existing calibration data
         self.load_calibration()
         
@@ -136,7 +142,7 @@ class SlouchDetector:
             (text_x, text_y), 
             cv2.FONT_HERSHEY_SIMPLEX, 
             1, 
-            (0, 255,0), 
+            (0, 255, 0), 
             2
         )
     
@@ -148,7 +154,7 @@ class SlouchDetector:
         text = "Calibrating posture... Stay still and sit up straight"
         text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
         text_x = int((w - text_size[0]) / 2)
-        text_y = int(h / 2) - 30
+        text_y = int(h / 2) - 20
         
         cv2.putText(
             frame, 
@@ -227,22 +233,27 @@ class SlouchDetector:
         if not self.calibrated or not pose_landmarks:
             return False
         
-        current_landmarks = self._extract_posture_landmarks(pose_landmarks)
+        current_time = time.time()
         
-        # If we couldn't extract the necessary landmarks, return False
-        if not current_landmarks or not self.calibration_landmarks:
-            return False
-        
-        # Calculate slouch metrics
-        slouch_detected, slouch_percentage = self._calculate_slouch(current_landmarks)
+        # Only recalculate slouch at certain intervals to improve performance
+        if current_time - self.last_slouch_calculation_time >= self.slouch_calculation_interval:
+            current_landmarks = self._extract_posture_landmarks(pose_landmarks)
+            
+            # If we couldn't extract the necessary landmarks, return False
+            if not current_landmarks or not self.calibration_landmarks:
+                return False
+            
+            # Calculate slouch metrics
+            self.last_slouch_detected, self.last_slouch_percentage = self._calculate_slouch(current_landmarks)
+            self.last_slouch_calculation_time = current_time
         
         # Always draw the slouch percentage
-        if slouch_detected:
-            self._draw_slouch_alert(frame, slouch_percentage)
+        if self.last_slouch_detected:
+            self._draw_slouch_alert(frame, self.last_slouch_percentage)
         else:
-            self._draw_slouch_percentage(frame, slouch_percentage)
+            self._draw_slouch_percentage(frame, self.last_slouch_percentage)
             
-        return slouch_detected
+        return self.last_slouch_detected
     
     def _calculate_slouch(self, current_landmarks):
         """Calculate if the user is slouching and by how much"""
@@ -279,17 +290,21 @@ class SlouchDetector:
             angle_diff = 0
         
         # 3. Calculate distance between nose and neck (shorter when slouching)
-        cal_nose_neck_dist = np.linalg.norm(np.array([
-            self.calibration_landmarks['nose'][0] - self.calibration_landmarks['neck'][0],
-            self.calibration_landmarks['nose'][1] - self.calibration_landmarks['neck'][1]
-        ]))
+        # Use squared distance for better performance
+        cal_nose_neck_dist_sq = self._squared_distance(
+            self.calibration_landmarks['nose'][:2],  # Only use x,y coordinates
+            self.calibration_landmarks['neck'][:2]
+        )
         
-        curr_nose_neck_dist = np.linalg.norm(np.array([
-            current_landmarks['nose'][0] - current_landmarks['neck'][0],
-            current_landmarks['nose'][1] - current_landmarks['neck'][1]
-        ]))
+        curr_nose_neck_dist_sq = self._squared_distance(
+            current_landmarks['nose'][:2],
+            current_landmarks['neck'][:2]
+        )
         
         # Calculate distance ratio (less than 1 means slouching)
+        # Take square root only once at the end for the ratio
+        cal_nose_neck_dist = np.sqrt(cal_nose_neck_dist_sq) if cal_nose_neck_dist_sq > 0 else 0.001
+        curr_nose_neck_dist = np.sqrt(curr_nose_neck_dist_sq) if curr_nose_neck_dist_sq > 0 else 0
         dist_ratio = curr_nose_neck_dist / cal_nose_neck_dist if cal_nose_neck_dist > 0 else 1
         
         # Combine metrics to calculate slouch percentage
@@ -318,6 +333,13 @@ class SlouchDetector:
         slouch_detected = slouch_percentage > self.threshold_percentage
         
         return slouch_detected, slouch_percentage
+    
+    def _squared_distance(self, point1, point2):
+        """Calculate squared Euclidean distance between two points"""
+        # This is faster than np.linalg.norm as it avoids the square root
+        dx = point1[0] - point2[0]
+        dy = point1[1] - point2[1]
+        return dx*dx + dy*dy
     
     def _draw_slouch_alert(self, frame, slouch_percentage):
         """Draw slouch alert on the frame"""
@@ -349,7 +371,7 @@ class SlouchDetector:
         """Draw slouch percentage on the frame when not slouching"""
         # Calculate color based on how close to threshold (green to yellow)
         ratio = min(slouch_percentage / self.threshold_percentage, 0.9)  # Cap at 90% of threshold
-        # Green (0,255,0) to Yellow (0,255,255)
+        # Green (0, 255, 0) to Yellow (0, 255, 255)
         color = (0, 255, int(255 * ratio))
         
         # Draw percentage text
