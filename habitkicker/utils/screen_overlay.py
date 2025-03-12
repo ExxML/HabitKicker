@@ -47,11 +47,17 @@ class ScreenOutline:
         # Notification window
         self.notification_window = None
         self.notification_visible = False
+        self.notification_animation_in_progress = False
+        self.notification_target_x = 11  # Target x position when fully visible
+        self.notification_start_x = -300  # Start position off-screen
+        self.notification_current_x = self.notification_start_x
+        self.notification_animation_steps = 15  # Number of steps for animation
+        self.notification_animation_delay = 20  # Milliseconds between animation steps
         
         # Audio alert tracking
         self.audio_playing = False
         self.audio_initialized = False
-        self.beep_sound = None
+        self.alarm_sound = None
         self.tint_start_time = 0  # When the red tint was first shown
         self.alarm_volume = 0.1  # Volume for the alarm sound
         
@@ -188,7 +194,8 @@ class ScreenOutline:
             width, height: Dimensions of the window
         """
         window = Toplevel(self.root)
-        window.geometry(f"{width}x{height}+{x}+{y}")
+        # Start off-screen to the left
+        window.geometry(f"{width}x{height}+{self.notification_start_x}+{y}")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
         window.attributes("-alpha", 0.9)  # Set transparency
@@ -284,10 +291,9 @@ class ScreenOutline:
         for window in self.windows:
             window.withdraw()
         
-        # Hide notification window
-        if self.notification_window:
-            self.notification_window.withdraw()
-            self.notification_visible = False
+        # Hide notification window with animation if it's visible
+        if self.notification_window and self.notification_visible:
+            self._hide_notification_with_animation()
         
         self.is_showing = False
     
@@ -327,11 +333,84 @@ class ScreenOutline:
         # Show or hide notification based on message content and current color
         # Don't show notification for green outline
         if message and not self.notification_visible and self.is_showing and self.current_color != "green2":
-            self.notification_window.deiconify()
-            self.notification_visible = True
+            # Show with animation
+            self._show_notification_with_animation()
         elif (not message and self.notification_visible) or (self.current_color == "green2" and self.notification_visible):
-            self.notification_window.withdraw()
-            self.notification_visible = False
+            # Hide with animation
+            self._hide_notification_with_animation()
+    
+    def _show_notification_with_animation(self):
+        """Show the notification window with a slide-in animation from the left"""
+        if not self.root or not self.notification_window or self.notification_animation_in_progress:
+            return
+            
+        # Make window visible but at the starting position
+        self.notification_window.deiconify()
+        self.notification_visible = True
+        self.notification_animation_in_progress = True
+        self.notification_current_x = self.notification_start_x
+        
+        # Start the animation
+        self._animate_notification_step(is_showing=True)
+    
+    def _hide_notification_with_animation(self):
+        """Hide the notification window with a slide-out animation to the left"""
+        if not self.root or not self.notification_window or self.notification_animation_in_progress:
+            return
+            
+        # Start the animation from current position
+        self.notification_animation_in_progress = True
+        
+        # Start the animation
+        self._animate_notification_step(is_showing=False)
+    
+    def _animate_notification_step(self, is_showing=True):
+        """Perform one step of the notification animation
+        
+        Args:
+            is_showing: True for slide-in animation, False for slide-out animation
+        """
+        if not self.root or not self.notification_window:
+            self.notification_animation_in_progress = False
+            return
+            
+        if is_showing:
+            # Slide-in animation (from left to target position)
+            # Calculate the distance to move in this step
+            distance_to_target = self.notification_target_x - self.notification_current_x
+            step_size = max(1, distance_to_target // 5)  # Move faster at the beginning, slower at the end
+            
+            # Update position
+            self.notification_current_x += step_size
+            
+            # If we've reached or passed the target, set to target position
+            if self.notification_current_x >= self.notification_target_x:
+                self.notification_current_x = self.notification_target_x
+                self.notification_animation_in_progress = False
+        else:
+            # Slide-out animation (from current position to off-screen left)
+            # Calculate step size based on current position
+            step_size = max(5, abs(self.notification_current_x) // 3)  # Move faster as it gets further away
+            
+            # Update position
+            self.notification_current_x -= step_size
+            
+            # If we've moved off-screen, finish the animation
+            if self.notification_current_x <= self.notification_start_x:
+                self.notification_current_x = self.notification_start_x
+                self.notification_animation_in_progress = False
+                # Actually hide the window when animation is complete
+                if not is_showing and self.notification_window:
+                    self.notification_window.withdraw()
+                    self.notification_visible = False
+                return
+        
+        # Update window position
+        self.notification_window.geometry(f"+{self.notification_current_x}+11")
+        
+        # Schedule next animation step if not done
+        if self.notification_animation_in_progress and self.root:
+            self.root.after(self.notification_animation_delay, lambda: self._animate_notification_step(is_showing))
     
     def update_habit_status(self, nail_biting, hair_pulling, slouching):
         """Update the habit detection status and manage outline display
@@ -521,7 +600,7 @@ class ScreenOutline:
             if self.audio_initialized:
                 pygame.mixer.quit()
                 self.audio_initialized = False
-                self.beep_sound = None
+                self.alarm_sound = None
             
             # Destroy all windows
             for window in self.windows:
@@ -587,21 +666,21 @@ class ScreenOutline:
         if current_time - self.tint_start_time >= self.escalation_threshold and self.is_tinted:
             if self.audio_initialized and not self.audio_playing:
                 self.start_audio()
-                # Schedule the beep to play repeatedly
-                self._play_beep_loop()
+                # Schedule the alarm to play repeatedly
+                self._play_alarm_loop()
 
-    def _play_beep_loop(self):
-        """Play the beep sound in a loop while audio is playing"""
+    def _play_alarm_loop(self):
+        """Play the alarm sound in a loop while audio is playing"""
         if not self.root or not self.audio_playing:
             return
         
-        # Play the beep sound
-        if self.beep_sound:
-            self.beep_sound.play()
+        # Play the alarm sound
+        if self.alarm_sound:
+            self.alarm_sound.play()
         
-        # Schedule next beep if audio is still playing
+        # Schedule next alarm if audio is still playing
         if self.audio_playing:
-            self.root.after(500, self._play_beep_loop)  # Play every second
+            self.root.after(500, self._play_alarm_loop)  # Play every second
 
     def _update_notification_color(self, color):
         """Update the notification window color to match the outline
@@ -638,40 +717,40 @@ class ScreenOutline:
         else:
             return "black"
 
-    def play_beep(self):
-        """Play the beep sound"""
-        if not self.root or not self.beep_sound:
+    def play_alarm(self):
+        """Play the alarm sound"""
+        if not self.root or not self.alarm_sound:
             return
         
-        # Play the beep sound
-        self.beep_sound.play()
+        # Play the alarm sound
+        self.alarm_sound.play()
 
-    def stop_beep(self):
-        """Stop the beep sound"""
-        if not self.root or not self.beep_sound:
+    def stop_alarm(self):
+        """Stop the alarm sound"""
+        if not self.root or not self.alarm_sound:
             return
         
-        # Stop the beep sound
-        self.beep_sound.stop()
+        # Stop the alarm sound
+        self.alarm_sound.stop()
 
     def start_audio(self):
         """Start the audio playback"""
-        if not self.root or not self.beep_sound:
+        if not self.root or not self.alarm_sound:
             return
         
         # Start the audio playback
         self.audio_playing = True
-        # The actual sound playing is handled by _play_beep_loop
+        # The actual sound playing is handled by _play_alarm_loop
 
     def stop_audio(self):
         """Stop the audio playback"""
-        if not self.root or not self.beep_sound:
+        if not self.root or not self.alarm_sound:
             return
         
         # Stop the audio playback
         self.audio_playing = False
-        if self.beep_sound:
-            self.beep_sound.stop()
+        if self.alarm_sound:
+            self.alarm_sound.stop()
 
     def is_audio_playing(self):
         """Check if the audio is currently playing"""
@@ -690,15 +769,15 @@ class ScreenOutline:
         pygame.mixer.init()
         
         # Load the sound file
-        self.beep_sound = pygame.mixer.Sound(sound_path)
-        self.beep_sound.set_volume(self.alarm_volume)
+        self.alarm_sound = pygame.mixer.Sound(sound_path)
+        self.alarm_sound.set_volume(self.alarm_volume)
 
         # Mark audio as initialized
         self.audio_initialized = True
 
     def update_audio_state(self):
         """Update the audio state based on the current outline color"""
-        if not self.root or not self.beep_sound:
+        if not self.root or not self.alarm_sound:
             return
         
         # Check if the current outline color is red
