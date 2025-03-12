@@ -9,9 +9,9 @@ from habitkicker.utils.mediapipe_handler import MediapipeHandler
 from habitkicker.utils.screen_overlay import ScreenOutline
 
 class Camera:
-    def __init__(self, nail_biting_threshold = 40, hair_pulling_threshold = 50, slouch_threshold = 15):
+    def __init__(self, max_nail_pulling_distance = 40, max_hair_pulling_distance = 50, max_finger_to_finger_distance = 50, slouch_threshold = 15):
         self.mp_handler = MediapipeHandler()
-        self.habit_detector = HabitDetector(nail_biting_threshold, hair_pulling_threshold)
+        self.habit_detector = HabitDetector(max_nail_pulling_distance, max_hair_pulling_distance, max_finger_to_finger_distance)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
         self.config = LandmarkConfig()
         self.show_landmarks = True
@@ -243,7 +243,7 @@ class Camera:
                 self.is_calibrating = False
                 self.calibration_complete_time = time.time()  # Record when calibration completed
         
-        # Show "Calibration Complete!" message for 2seconds after calibration
+        # Show "Calibration Complete!" message for 2 seconds after calibration
         current_time = time.time()
         if not self.is_calibrating and current_time - self.calibration_complete_time < 2:
             text = "Calibration Complete!"

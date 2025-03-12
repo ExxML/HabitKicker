@@ -4,7 +4,7 @@ import numpy as np
 from habitkicker.config.landmark_config import LandmarkConfig
 
 class HabitDetector:
-    def __init__(self, max_nail_pulling_distance, max_hair_pulling_distance, max_finger_to_finger_distance = 50):
+    def __init__(self, max_nail_pulling_distance, max_hair_pulling_distance, max_finger_to_finger_distance):
         # Square the thresholds to avoid square root calculations
         self.NAIL_PULLING_THRESHOLD_SQ = max_nail_pulling_distance * max_nail_pulling_distance
         self.HAIR_PULLING_THRESHOLD_SQ = max_hair_pulling_distance * max_hair_pulling_distance
