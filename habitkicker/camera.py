@@ -2,6 +2,7 @@
 
 import cv2
 import time
+import threading
 from habitkicker.config.landmark_config import LandmarkConfig
 from habitkicker.detectors.habit_detector import HabitDetector
 from habitkicker.detectors.slouch_detector import SlouchDetector
@@ -15,7 +16,6 @@ class Camera:
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
         self.config = LandmarkConfig()
         self.show_landmarks = True
-        self.show_window = True  # Flag to control window visibility
         self.cap = None
         self.is_calibrating = False
         self.calibration_complete_time = 0  # Track when calibration completed
@@ -38,7 +38,14 @@ class Camera:
         self._yellow_alert = (255, 255, 0)
         
         # Window name constant
-        self._window_name = 'HabitKicker'
+        self._window_name = 'HabitKicker Debug Window'
+        
+        # Current frame for external access
+        self.current_frame = None
+        
+        # Thread control
+        self.running = False
+        self.thread = None
 
     def _initialize_camera(self):
         """Initialize camera with specific settings"""
@@ -49,21 +56,6 @@ class Camera:
         cap.set(cv2.CAP_PROP_BRIGHTNESS, 150)
         cap.set(cv2.CAP_PROP_CONTRAST, 150)
         return cap
-        
-    def _toggle_window_visibility(self):
-        """Toggle the visibility of the camera window"""
-        self.show_window = not self.show_window
-        
-        if self.show_window:
-            # Create window if it doesn't exist
-            cv2.namedWindow(self._window_name, cv2.WINDOW_NORMAL)
-        else:
-            # Destroy window if it exists
-            cv2.destroyWindow(self._window_name)
-            
-        # Print status message
-        status = "visible" if self.show_window else "hidden"
-        print(f"Camera window is now {status}. Press 'w' to toggle visibility.")
 
     def calculate_landmark_position(self, landmark, image_shape):
         """Calculate pixel position from normalized landmark coordinates"""
@@ -258,7 +250,7 @@ class Camera:
         # If not calibrated and not currently calibrating, show a message about posture percentage
         if not self.slouch_detector.calibrated and not self.is_calibrating:
             cv2.putText(frame, "Posture: N/A (Calibration needed)", (50, 130),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, self._yellow, 2)
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, self._yellow, 2)
         
         # Check for slouching
         return self.slouch_detector.check_slouching(frame, pose_landmark)
@@ -267,13 +259,20 @@ class Camera:
         """Start the slouch detection calibration process"""
         self.is_calibrating = True
         self.slouch_detector.start_calibration()
-        
-        # Make sure window is visible during calibration
-        if not self.show_window:
-            self._toggle_window_visibility()
 
-    def start_camera(self):
-        """Main method to start camera and process frames"""
+    def get_current_frame(self):
+        """Return the current camera frame for display in the GUI panel"""
+        return self.current_frame
+    
+    def start_camera_no_window(self):
+        """Start camera processing in a background thread without showing its own window"""
+        self.running = True
+        self.thread = threading.Thread(target=self._camera_thread_function)
+        self.thread.daemon = True
+        self.thread.start()
+    
+    def _camera_thread_function(self):
+        """Background thread function for camera processing"""
         cap = self._initialize_camera()
         self.cap = cap
         
@@ -284,19 +283,8 @@ class Camera:
         # Start with calibration if not already calibrated
         if not self.slouch_detector.calibrated:
             self.start_calibration()
-            
-        # Create initial window
-        if self.show_window:
-            cv2.namedWindow(self._window_name, cv2.WINDOW_NORMAL)
-            
-        # Print initial instructions
-        print("HabitKicker is running.")
-        print("Press 'q' to quit, 'c' to calibrate, 'l' to toggle landmarks")
-        print("Press 'w' to toggle window visibility")
-
-        running = True
         
-        while running:
+        while self.running:
             # Get and process frame
             ret, frame = cap.read()
             if not ret:
@@ -343,11 +331,6 @@ class Camera:
                 # Cache current time to avoid multiple calls
                 current_time = time.time()
                 
-                # Display calibration instructions if not calibrated
-                if not self.slouch_detector.calibrated and not self.is_calibrating:
-                    cv2.putText(frame, "Press 'c' to calibrate posture", (50, 210),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.8, self._yellow_alert, 2)
-                
                 # Show "Calibration Loaded!" message for 3 seconds after startup if calibration was loaded
                 if self.calibration_loaded and current_time - self.calibration_loaded_message_time < 3:
                     text = "Posture Calibration Loaded!"
@@ -358,46 +341,26 @@ class Camera:
                     
                     cv2.putText(frame, text, (text_x, text_y),
                                cv2.FONT_HERSHEY_SIMPLEX, 1, self._green, 2)
-                
-                # Add window visibility status
-                window_status = "Window: Visible (Press 'w' to hide)"
-                cv2.putText(frame, window_status, (50, frame.shape[0] - 20),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, self._green, 1)
 
-                # Only display the frame if the window is visible
-                if self.show_window:
-                    cv2.imshow(self._window_name, frame)
-                
-                # Always check for key presses, even if window is hidden
-                # Use a small wait time to reduce CPU usage when window is hidden
-                wait_time = 1 if self.show_window else 100
-                key = cv2.waitKey(wait_time) & 0xFF
-                
-                if key == ord('q'):
-                    running = False
-                elif key == ord('c'):
-                    self.start_calibration()
-                elif key == ord('l'):
-                    # Toggle landmarks display
-                    self.show_landmarks = not self.show_landmarks
-                elif key == ord('w'):
-                    # Toggle window visibility
-                    self._toggle_window_visibility()
+                # Store the current frame for external access
+                self.current_frame = frame.copy()
                     
             except Exception as e:
                 print(f"Error processing frame: {e}")
                 time.sleep(0.5)  # Wait a bit before retrying
-
-        # Cleanup
-        try:
-            # First release OpenCV resources
-            cap.release()
-            cv2.destroyAllWindows()
-        except Exception as e:
-            print(f"Warning during OpenCV cleanup: {e}")
-
-        # Then cleanup screen outline (don't wait for it)
-        try:
-            self.screen_outline.cleanup()
-        except Exception as e:
-            print(f"Warning during screen outline cleanup: {e}") 
+    
+    def stop_camera(self):
+        """Stop the camera processing thread and clean up resources"""
+        self.running = False
+        
+        # Wait for thread to finish
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=1.0)
+        
+        # Release camera resources
+        if self.cap is not None:
+            try:
+                self.cap.release()
+                self.cap = None
+            except Exception as e:
+                print(f"Error releasing camera: {e}")

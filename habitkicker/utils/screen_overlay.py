@@ -39,6 +39,11 @@ class ScreenOutline:
         self.tint_window = None
         self.is_tinted = False
         
+        # Feature toggle flags
+        self.show_notification = True      # Whether to show notifications
+        self.show_outline_enabled = True    # Whether to show the outline
+        self.show_red_tint = True               # Whether to show the tint
+        
         # Green feedback tracking
         self.green_feedback_active = False  # Whether green feedback is active
         self.green_start_time = 0           # When green outline was shown
@@ -125,7 +130,7 @@ class ScreenOutline:
         self.windows.append(msg_window)
         
         # Create notification window in top-left corner
-        self._create_notification_window(11, 11, 260, 122)
+        self._create_notification_window(11, 11, 358, 168)
         
         # Create tint window (initially hidden)
         self._create_tint_window(width, height)
@@ -212,10 +217,10 @@ class ScreenOutline:
                           font = ("Calibri", 15, "bold"), tags = "title")
         
         # Add horizontal line
-        canvas.create_line(10, 35, width - 10, 35, fill = "gray", tags = "line")
+        canvas.create_line(10, 50, width - 10, 50, fill = "gray", tags = "line")
         
         # Add message text
-        canvas.create_text(10, 45, anchor = "nw", text = "", fill = "white", 
+        canvas.create_text(10, 56, anchor = "nw", text = "", fill = "white", 
                           font = ("Calibri", 13), width = width - 20, tags = "notification_text")
         
         # Hide the window initially
@@ -255,7 +260,7 @@ class ScreenOutline:
         Args:
             color: Color name ("orange", "red", etc.)
         """
-        if not self.root or not self.windows:
+        if not self.root or not self.windows or not self.show_outline_enabled:
             return
             
         # If color is changing, update the start time for the new color
@@ -287,14 +292,14 @@ class ScreenOutline:
         if not self.root or not self.windows:
             return
             
-        # Hide all outline windows (but not the tint window)
-        for window in self.windows:
+        # Hide all outline windows
+        for window in self.windows[:-1]:  # Skip message window
             window.withdraw()
         
         # Hide notification window with animation if it's visible
         if self.notification_window and self.notification_visible:
             self._hide_notification_with_animation()
-        
+
         self.is_showing = False
     
     def update_message(self, message):
@@ -341,7 +346,7 @@ class ScreenOutline:
     
     def _show_notification_with_animation(self):
         """Show the notification window with a slide-in animation from the left"""
-        if not self.root or not self.notification_window or self.notification_animation_in_progress:
+        if not self.root or not self.notification_window or self.notification_animation_in_progress or not self.show_notification:
             return
             
         # Make window visible but at the starting position
@@ -351,7 +356,7 @@ class ScreenOutline:
         self.notification_current_x = self.notification_start_x
         
         # Start the animation
-        self._animate_notification_step(is_showing=True)
+        self._animate_notification_step(animation_showing=True)
     
     def _hide_notification_with_animation(self):
         """Hide the notification window with a slide-out animation to the left"""
@@ -362,9 +367,9 @@ class ScreenOutline:
         self.notification_animation_in_progress = True
         
         # Start the animation
-        self._animate_notification_step(is_showing=False)
+        self._animate_notification_step(animation_showing=False)
     
-    def _animate_notification_step(self, is_showing=True):
+    def _animate_notification_step(self, animation_showing=True):
         """Perform one step of the notification animation
         
         Args:
@@ -374,7 +379,7 @@ class ScreenOutline:
             self.notification_animation_in_progress = False
             return
             
-        if is_showing:
+        if animation_showing:
             # Slide-in animation (from left to target position)
             # Calculate the distance to move in this step
             distance_to_target = self.notification_target_x - self.notification_current_x
@@ -400,7 +405,7 @@ class ScreenOutline:
                 self.notification_current_x = self.notification_start_x
                 self.notification_animation_in_progress = False
                 # Actually hide the window when animation is complete
-                if not is_showing and self.notification_window:
+                if not animation_showing and self.notification_window:
                     self.notification_window.withdraw()
                     self.notification_visible = False
                 return
@@ -410,7 +415,7 @@ class ScreenOutline:
         
         # Schedule next animation step if not done
         if self.notification_animation_in_progress and self.root:
-            self.root.after(self.notification_animation_delay, lambda: self._animate_notification_step(is_showing))
+            self.root.after(self.notification_animation_delay, lambda: self._animate_notification_step(animation_showing))
     
     def update_habit_status(self, nail_biting, hair_pulling, slouching):
         """Update the habit detection status and manage outline display
@@ -554,6 +559,11 @@ class ScreenOutline:
                 
                 # Flag shutdown
                 self.shutdown_requested = True
+                
+                # Wait for the tkinter thread to finish
+                if hasattr(self, 'init_thread') and self.init_thread.is_alive():
+                    self.init_thread.join(timeout=1.0)
+                
             except Exception as e:
                 print(f"Warning during cleanup: {e}")
     
@@ -577,14 +587,15 @@ class ScreenOutline:
             
             # Hide all windows first
             for window in self.windows:
-                window.withdraw()
+                if window.winfo_exists():
+                    window.withdraw()
             
             # Hide notification window if it exists
-            if self.notification_window:
+            if self.notification_window and self.notification_window.winfo_exists():
                 self.notification_window.withdraw()
             
             # Hide tint window if it exists
-            if self.tint_window:
+            if self.tint_window and self.tint_window.winfo_exists():
                 self.tint_window.withdraw()
             
             # Schedule actual destruction after a short delay
@@ -604,28 +615,30 @@ class ScreenOutline:
             
             # Destroy all windows
             for window in self.windows:
-                window.destroy()
+                if window.winfo_exists():
+                    window.destroy()
             self.windows = []
             
             # Destroy notification window if it exists
-            if self.notification_window:
+            if self.notification_window and self.notification_window.winfo_exists():
                 self.notification_window.destroy()
                 self.notification_window = None
             
             # Destroy tint window if it exists
-            if self.tint_window:
+            if self.tint_window and self.tint_window.winfo_exists():
                 self.tint_window.destroy()
                 self.tint_window = None
             
             # Quit and destroy root
-            self.root.quit()
-            self.root.destroy()
+            if self.root and self.root.winfo_exists():
+                self.root.quit()
+                self.root.destroy()
         except Exception as e:
             print(f"Warning during final destruction: {e}")
 
     def show_tint(self):
         """Show the red screen tint"""
-        if not self.root or not self.tint_window:
+        if not self.root or not self.tint_window or not self.show_tint:
             return
         
         # Configure the tint window with red background

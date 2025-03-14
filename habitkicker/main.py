@@ -1,18 +1,19 @@
 """Main entry point for the HabitKicker application"""
 
-import cv2
-from habitkicker.camera import Camera
+import sys
+from PyQt6.QtWidgets import QApplication
+from habitkicker.gui import HabitKickerGUI
 
 def main():
     """Main function to run the HabitKicker application"""
-    camera = Camera()
-    try:
-        camera.start_camera()
-    except Exception as e:
-        print(f"Error: {e}")
-        if hasattr(camera, 'cap') and camera.cap is not None:
-            camera.cap.release()
-            cv2.destroyAllWindows()
+    app = QApplication(sys.argv)
+    
+    # Create and show the GUI
+    window = HabitKickerGUI()
+    window.show()
+    
+    # Start the application event loop
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main() 

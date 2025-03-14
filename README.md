@@ -10,7 +10,9 @@ A computer vision application that helps detect and break unwanted habits like n
 - Slouch detection with calibration
 - Screen outline alerts for persistent habits
 - Toggle landmark visualization
-- Simple and intuitive interface
+- Modern PyQt6 GUI interface with dark theme
+- Adjustable detection parameters
+- Customizable alert settings
 
 ## Project Structure
 
@@ -20,6 +22,7 @@ HabitKicker/
 │   ├── __init__.py
 │   ├── main.py                  # Entry point
 │   ├── camera.py                # Main camera interface
+│   ├── gui.py                   # PyQt6 GUI interface
 │   ├── config/                  # Configuration
 │   │   ├── __init__.py
 │   │   └── landmark_config.py
@@ -48,7 +51,7 @@ pip install -e .
 
 ```bash
 # Install dependencies
-pip install opencv-python mediapipe numpy
+pip install -r requirements.txt
 
 # Run the application as a module
 python -m habitkicker.main
@@ -65,9 +68,18 @@ python -m habitkicker.main
    python -m habitkicker.main
    ```
 
-2. Controls:
-   - Press 'q' to quit the application
-   - Press 'c' to calibrate posture detection
+2. GUI Interface:
+   - The application now features a modern PyQt6 GUI with a dark theme
+   - Click "Start HabitKicker" to begin habit detection
+   - Click "Calibrate Posture" to calibrate your posture
+   - Use sliders to adjust detection sensitivity:
+     - Max Nail Biting Distance: Controls how close fingers need to be to mouth to trigger nail-biting detection
+     - Max Hair Pulling Distance: Controls how close fingers need to be to hairline to trigger hair-pulling detection
+     - Max Finger to Finger Distance: Controls how close fingers need to be to each other for hair-pulling detection
+   - Toggle notification and screen outline visibility
+   - Adjust alarm volume with the volume slider
+   - Toggle camera window visibility with the "Toggle Camera Window" button
+   - Click "Stop HabitKicker" to stop the application
 
 3. The application will detect and alert you about:
    - Nail biting (fingers near mouth)
@@ -75,19 +87,17 @@ python -m habitkicker.main
    - Slouching (deviation from calibrated posture)
 
 4. Slouch Detection:
-   - When you first start the application, it will prompt you to sit up straight for calibration
+   - When you click "Calibrate Posture", the camera window will appear
+   - Sit up straight during the calibration process
    - The calibration process takes a few seconds to establish your proper posture
-   - After calibration, the application will alert you when you slouch
-   - You can recalibrate at any time by pressing 'c'
-   - The default slouch detection threshold is 15%
-   - The slouch detection works by analyzing upper body posture (shoulders, neck, and head position)
+   - After calibration is complete, the camera window will automatically hide
+   - The application will alert you when you slouch
+   - You can recalibrate at any time by clicking "Calibrate Posture" again
 
 5. Screen Outline Alerts:
    - When a habit is detected consistently for 3+ seconds, a yellow outline appears around your screen
    - Detection messages are displayed in the top-left corner of the screen
-   - The outline disappears after no habits are detected for 3 seconds
-   - You can continue using your computer normally while the outline is displayed
-   - The outline is semi-transparent and designed to be noticeable but not obtrusive
+   - You can toggle these alerts on/off in the GUI
 
 ## How Slouch Detection Works
 
