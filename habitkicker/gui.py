@@ -112,8 +112,8 @@ class HabitKickerGUI(QMainWindow):
         # Create camera panel content
         self.camera_panel_content = QWidget()
         camera_panel_layout = QVBoxLayout(self.camera_panel_content)
-        camera_panel_layout.setContentsMargins(10, 10, 0, 10) # No margin on right border
-        camera_panel_layout.setSpacing(10)
+        camera_panel_layout.setContentsMargins(10, 0, 0, 22) # No margin on right border
+        camera_panel_layout.setSpacing(20)
         
         # Add camera panel header
         camera_header = QLabel("Camera Feed")
@@ -131,7 +131,7 @@ class HabitKickerGUI(QMainWindow):
         # Create camera view widget
         self.camera_view = QLabel()
         self.camera_view.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.camera_view.setMinimumSize(635, 450)
+        self.camera_view.setFixedSize(635, 441)
         self.camera_view.setStyleSheet("""
             background-color: #222222;
             border: 1px solid #444444;
