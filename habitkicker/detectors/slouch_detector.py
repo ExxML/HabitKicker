@@ -61,35 +61,40 @@ class SlouchDetector:
                 self.last_sample_time = current_time
                 return False
             
-            # Draw countdown
-            self._draw_calibration_countdown(frame, remaining)
             return False
             
         # Handle actual calibration phase
         elapsed = current_time - self.calibration_start_time
-        if elapsed < self.calibration_duration:
-            # Still calibrating
-            progress = int((elapsed / self.calibration_duration) * 100)
-            
+        if elapsed < self.calibration_duration:      
             # Collect samples at regular intervals
             if current_time - self.last_sample_time >= self.sample_interval and pose_landmarks:
                 self.last_sample_time = current_time
                 landmarks = self._extract_posture_landmarks(pose_landmarks)
                 if landmarks:
                     self.calibration_samples.append(landmarks)
-                    # Update the progress text to show samples collected
-                    self._draw_calibration_progress(frame, progress, len(self.calibration_samples))
-                else:
-                    self._draw_calibration_progress(frame, progress, len(self.calibration_samples))
-            else:
-                self._draw_calibration_progress(frame, progress, len(self.calibration_samples))
-                
+                    
             return False
         else:
-            # Calibration complete
+            # Calibration duration is complete
+            # Make sure we collect the final sample if needed
+            if pose_landmarks and len(self.calibration_samples) == 0:
+                # If somehow we have no samples yet, get at least one
+                landmarks = self._extract_posture_landmarks(pose_landmarks)
+                if landmarks:
+                    self.calibration_samples.append(landmarks)
+            
+            # Now complete the calibration
             if not self.calibrated and len(self.calibration_samples) > 0:
                 self._complete_calibration()
-            return True
+                return True
+            elif self.calibrated:
+                # Already calibrated
+                return True
+            else:
+                # No samples collected, keep trying
+                print("Warning: No calibration samples collected yet, continuing...")
+                self.calibration_start_time = current_time  # Reset timer to get more samples
+                return False
     
     def _complete_calibration(self):
         """Complete the calibration process by averaging collected landmarks"""
@@ -126,61 +131,6 @@ class SlouchDetector:
         
         # Save the calibration data
         self.save_calibration()
-    
-    def _draw_calibration_countdown(self, frame, remaining):
-        """Draw countdown UI during calibration preparation"""
-        h, w, _ = frame.shape
-        
-        text = f"Sit up straight! Calibration in {int(remaining)+1}..."
-        text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
-        text_x = int((w - text_size[0]) / 2)
-        text_y = int(h / 2)
-        
-        cv2.putText(
-            frame, 
-            text, 
-            (text_x, text_y), 
-            cv2.FONT_HERSHEY_SIMPLEX, 
-            1, 
-            (0, 255, 0), 
-            2
-        )
-    
-    def _draw_calibration_progress(self, frame, progress, samples_count=0):
-        """Draw progress bar during calibration"""
-        h, w, _ = frame.shape
-        
-        # Draw text
-        text = "Calibrating posture... Stay still and sit up straight"
-        text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
-        text_x = int((w - text_size[0]) / 2)
-        text_y = int(h / 2) - 20
-        
-        cv2.putText(
-            frame, 
-            text, 
-            (text_x, text_y), 
-            cv2.FONT_HERSHEY_SIMPLEX, 
-            0.8, 
-            (0, 255, 0), 
-            2
-        )
-        
-        # Draw progress bar
-        bar_width = 400
-        bar_height = 30
-        bar_x = int(w/2) - int(bar_width/2)
-        bar_y = int(h/2) + 20
-        
-        # Background
-        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_width, bar_y + bar_height), (100, 100, 100), -1)
-        
-        # Progress
-        progress_width = int((progress / 100) * bar_width)
-        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + progress_width, bar_y + bar_height), (0, 255, 0), -1)
-        
-        # Border
-        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_width, bar_y + bar_height), (255, 255, 255), 2)
     
     def _extract_posture_landmarks(self, pose_landmarks):
         """Extract relevant landmarks for posture analysis"""

@@ -7,7 +7,7 @@ import json
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QSlider, QLabel, QCheckBox, QFrame, QSizePolicy,
-    QSpacerItem, QGraphicsOpacityEffect
+    QSpacerItem, QGraphicsOpacityEffect, QProgressBar
 )
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QSize, QEasingCurve
 from PyQt6.QtGui import QScreen, QFont, QIcon, QColor, QPalette, QPixmap, QImage
@@ -140,6 +140,51 @@ class HabitKickerGUI(QMainWindow):
         """)
         self.camera_view.setText("Camera feed will appear here")
         camera_panel_layout.addWidget(self.camera_view)
+        
+        # Add calibration status section at the bottom of camera panel
+        self.calibration_status_frame = QFrame()
+        self.calibration_status_frame.setStyleSheet("""
+            background-color: #333333;
+            border: 1px solid #444444;
+            border-radius: 4px;
+            padding: 5px;
+        """)
+        calibration_status_layout = QVBoxLayout(self.calibration_status_frame)
+        calibration_status_layout.setContentsMargins(10, 10, 10, 10)
+        calibration_status_layout.setSpacing(10)
+        
+        # Add calibration message label
+        self.calibration_message = QLabel("No calibration in progress")
+        self.calibration_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.calibration_message.setStyleSheet("color: #FFFFFF; font-size: 14px;")
+        calibration_status_layout.addWidget(self.calibration_message)
+        
+        # Add progress bar for calibration
+        self.calibration_progress = QProgressBar()
+        self.calibration_progress.setRange(0, 100)
+        self.calibration_progress.setValue(0)
+        self.calibration_progress.setTextVisible(True)
+        self.calibration_progress.setStyleSheet("""
+            QProgressBar {
+                border: 1px solid #555555;
+                border-radius: 4px;
+                background-color: #222222;
+                text-align: center;
+                color: white;
+                height: 25px;
+            }
+            QProgressBar::chunk {
+                background-color: #00AA00;
+                border-radius: 3px;
+            }
+        """)
+        calibration_status_layout.addWidget(self.calibration_progress)
+        
+        # Hide by default
+        self.calibration_status_frame.setVisible(False)
+        
+        # Add to camera panel layout
+        camera_panel_layout.addWidget(self.calibration_status_frame)
         
         # Add widgets to panel layout
         panel_layout.addWidget(self.panel_bar)
@@ -380,6 +425,10 @@ class HabitKickerGUI(QMainWindow):
                         Qt.AspectRatioMode.KeepAspectRatio
                     ))
                     
+                    # Update calibration status if camera is calibrating
+                    if is_calibrating:
+                        self.update_calibration_status()
+                        
                     # If calibrating and panel is not expanded, expand it to show the calibration
                     if is_calibrating and not self.panel_expanded:
                         self.toggle_panel()
@@ -390,6 +439,59 @@ class HabitKickerGUI(QMainWindow):
                 self.camera_view.setText("Camera feed not available")
         else:
             self.camera_view.setText("Camera not initialized")
+    
+    def update_calibration_status(self):
+        """Update the calibration status in the panel"""
+        if not hasattr(self, 'camera') or self.camera is None:
+            return
+            
+        # Show the calibration status frame
+        self.calibration_status_frame.setVisible(True)
+        
+        # Get calibration info from the camera/slouch_detector
+        if self.camera.is_calibrating:
+            # Check if in countdown phase
+            if self.camera.slouch_detector.calibration_countdown > 0:
+                current_time = time.time()
+                elapsed = current_time - self.camera.slouch_detector.calibration_start_time
+                remaining = self.camera.slouch_detector.calibration_countdown - elapsed
+                
+                if remaining > 0:
+                    # Update countdown message
+                    self.calibration_message.setText(f"Calibration in {int(remaining)+1}...")
+                    self.calibration_message.setStyleSheet("color: #00FF00; font-size: 14px; font-weight: bold;")
+                    self.calibration_progress.setValue(0)
+                
+            else:
+                # In actual calibration phase
+                current_time = time.time()
+                elapsed = current_time - self.camera.slouch_detector.calibration_start_time
+                duration = self.camera.slouch_detector.calibration_duration
+                
+                if elapsed < duration:
+                    # Calculate progress percentage
+                    progress = int((elapsed / duration) * 100)
+                    
+                    # Update UI
+                    self.calibration_message.setText("Calibrating posture... Stay still and sit up straight!")
+                    self.calibration_message.setStyleSheet("color: #00FF00; font-size: 14px; font-weight: bold;")
+                    self.calibration_progress.setValue(progress)
+        
+        # Check if calibration just completed
+        elif hasattr(self.camera, 'calibration_complete_time'):
+            current_time = time.time()
+            if current_time - self.camera.calibration_complete_time < 2:
+                # Show completion message
+                self.calibration_message.setText("Calibration Complete!")
+                self.calibration_message.setStyleSheet("color: #00FF00; font-size: 14px; font-weight: bold;")
+                self.calibration_progress.setValue(100)
+            # Hide the calibration status after the completion message duration
+            time.sleep(1)
+            self.calibration_status_frame.setVisible(False)
+        
+        else:
+            # No calibration activity, hide the frame
+            self.calibration_status_frame.setVisible(False)
     
     def load_settings(self):
         """Load settings from file"""
@@ -569,11 +671,18 @@ class HabitKickerGUI(QMainWindow):
                 # Make sure camera panel content is visible
                 self.camera_panel_content.setVisible(True)
                 
+                # Show calibration status panel
+                self.calibration_status_frame.setVisible(True)
+                self.calibration_message.setText("Preparing for calibration...")
+                self.calibration_progress.setValue(0)
+                
                 self.camera.start_calibration()
                 self.calibration_status.setText("Status: Calibrating...")
                 
-                # Check calibration status after a delay
-                QTimer.singleShot(3000, self.check_calibration_status)
+                # Check calibration status periodically
+                self.calibration_timer = QTimer()
+                self.calibration_timer.timeout.connect(self.check_calibration_status)
+                self.calibration_timer.start(500)  # Check every 500ms
 
             except Exception as e:
                 print(f"Error starting calibration: {e}")
@@ -585,21 +694,41 @@ class HabitKickerGUI(QMainWindow):
     def check_calibration_status(self):
         """Check if calibration is complete"""
         if hasattr(self, 'camera') and self.camera is not None:
-            if self.camera.slouch_detector.calibrated:
+            # Check if the slouch detector is calibrated or if calibration just completed
+            is_calibrated = self.camera.slouch_detector.calibrated
+            just_completed = hasattr(self.camera, 'calibration_complete_time') and \
+                            time.time() - self.camera.calibration_complete_time < 2
+                            
+            if is_calibrated:
                 self.calibration_status.setText("Status: Calibrated")
                 
+                # If calibration just completed, make sure we update the panel UI
+                if just_completed:
+                    self.update_calibration_status()
+                
                 # Close the slide-out panel after calibration is complete
-                if self.panel_expanded:
+                if self.panel_expanded and not just_completed:
                     # Wait a moment before closing the panel so user can see the completion
-                    QTimer.singleShot(1000, self.toggle_panel)
+                    QTimer.singleShot(2000, self.toggle_panel)
+                
+                # Stop the timer if we were using one
+                if hasattr(self, 'calibration_timer') and self.calibration_timer.isActive():
+                    self.calibration_timer.stop()
             else:
                 self.calibration_status.setText("Status: Not calibrated")
                 
-                # Check again after a delay if still calibrating
-                if self.camera.is_calibrating:
-                    QTimer.singleShot(1000, self.check_calibration_status)
+                # Update the calibration status message and progress
+                self.update_calibration_status()
+                
+                # If no longer calibrating but not calibrated, something went wrong
+                if not self.camera.is_calibrating:
+                    if hasattr(self, 'calibration_timer') and self.calibration_timer.isActive():
+                        self.calibration_timer.stop()
         else:
             self.calibration_status.setText("Status: Camera not initialized")
+            # Stop timer if active
+            if hasattr(self, 'calibration_timer') and self.calibration_timer.isActive():
+                self.calibration_timer.stop()
             
     def toggle_application(self):
         """Toggle the application between running and stopped states"""
@@ -673,14 +802,14 @@ class HabitKickerGUI(QMainWindow):
         except Exception as e:
             print(f"Error stopping HabitKicker: {e}")
             
-    def closeEvent(self, event):
+    def closeWindow(self, event):
         """Handle window close event"""
         # Stop the application when closing the window
         if self.application_running:
             self.stop_application()
         event.accept()
 
-    def resizeEvent(self, event):
+    def resizeWindow(self, event):
         """Handle window resize events"""
         super().resizeEvent(event)
         # Update camera feed when window is resized
@@ -694,4 +823,4 @@ def main():
     sys.exit(app.exec())
 
 if __name__ == "__main__":
-    main() 
+    main()

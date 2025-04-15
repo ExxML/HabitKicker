@@ -21,10 +21,6 @@ class Camera:
         self.calibration_complete_time = 0  # Track when calibration completed
         self.screen_outline = ScreenOutline()
         
-        # Track if calibration was loaded from file
-        self.calibration_loaded = self.slouch_detector.calibrated
-        self.calibration_loaded_message_time = 0
-        
         # Cache for drawing styles to avoid recreating them each frame
         self._face_mesh_tesselation_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_tesselation_style()
         self._face_mesh_contours_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_contours_style()
@@ -234,19 +230,10 @@ class Camera:
             if calibration_complete:
                 self.is_calibrating = False
                 self.calibration_complete_time = time.time()  # Record when calibration completed
+                # Ensure slouch detector is marked as calibrated
+                self.slouch_detector.calibrated = True
+                print("Calibration complete and status updated")
         
-        # Show "Calibration Complete!" message for 2 seconds after calibration
-        current_time = time.time()
-        if not self.is_calibrating and current_time - self.calibration_complete_time < 2:
-            text = "Calibration Complete!"
-            text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
-            text_height = text_size[1]
-            text_x = int((frame.shape[1] - text_size[0]) / 2)
-            text_y = int(frame.shape[0] / 2 + text_height / 2)
-            
-            cv2.putText(frame, text, (text_x, text_y),
-                       cv2.FONT_HERSHEY_SIMPLEX, 1, self._green, 2)
-
         # If not calibrated and not currently calibrating, show a message about posture percentage
         if not self.slouch_detector.calibrated and not self.is_calibrating:
             cv2.putText(frame, "Posture: N/A (Calibration needed)", (50, 130),
@@ -276,10 +263,6 @@ class Camera:
         cap = self._initialize_camera()
         self.cap = cap
         
-        # Set time for showing calibration loaded message
-        if self.calibration_loaded:
-            self.calibration_loaded_message_time = time.time()
-
         # Start with calibration if not already calibrated
         if not self.slouch_detector.calibrated:
             self.start_calibration()
@@ -327,20 +310,6 @@ class Camera:
 
                 # Display alerts
                 self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)
-
-                # Cache current time to avoid multiple calls
-                current_time = time.time()
-                
-                # Show "Calibration Loaded!" message for 3 seconds after startup if calibration was loaded
-                if self.calibration_loaded and current_time - self.calibration_loaded_message_time < 3:
-                    text = "Posture Calibration Loaded!"
-                    text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
-                    text_height = text_size[1]
-                    text_x = int((frame.shape[1] - text_size[0]) / 2)
-                    text_y = int(frame.shape[0] / 2 + text_height / 2)
-                    
-                    cv2.putText(frame, text, (text_x, text_y),
-                               cv2.FONT_HERSHEY_SIMPLEX, 1, self._green, 2)
 
                 # Store the current frame for external access
                 self.current_frame = frame.copy()
