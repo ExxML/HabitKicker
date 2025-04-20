@@ -17,6 +17,7 @@ class ScreenOutline:
         """
         self.thickness = thickness
         self.alpha = alpha
+        self.current_alpha = alpha  # Add this line to track current transparency
         self.root = None
         self.windows = []
         self.current_color = None
@@ -254,21 +255,44 @@ class ScreenOutline:
         
         self.tint_window = window
     
-    def show_outline(self, color):
-        """Show the outline with the specified color
+    def set_outline_transparency(self, alpha):
+        """Set the transparency of the outline windows
         
         Args:
-            color: Color name ("orange", "red", etc.)
+            alpha: Transparency value (0-1, where 0 is fully transparent and 1 is opaque)
         """
-        if not self.root or not self.windows or not self.show_outline_enabled:
+        if not self.root or not self.windows:
             return
             
-        # If color is changing, update the start time for the new color
-        if self.current_color != color:
-            current_time = time.time()
-            if color == "orange":
+        self.current_alpha = alpha
+        
+        # Update transparency for outline windows only (excluding notification window)
+        for window in self.windows[:-1]:  # Skip message window
+            window.attributes("-alpha", alpha)
+            
+        # Make sure windows are visible even if transparent
+        if not self.is_showing:
+            for window in self.windows[:-1]:  # Skip message window
+                window.deiconify()
+            self.is_showing = True
+
+    def show_outline(self, color):
+        """Show the outline in the specified color
+        
+        Args:
+            color: Color to show the outline in
+        """
+        if not self.root or not self.windows:
+            return
+            
+        current_time = time.time()
+        
+        # Update escalation tracking based on color
+        if color == "orange":
+            if self.current_color != "orange":
                 self.orange_outline_start_time = current_time
-            elif color == "red":
+        elif color == "red":
+            if self.current_color != "red":
                 self.red_outline_start_time = current_time
         
         self.current_color = color
@@ -277,6 +301,8 @@ class ScreenOutline:
         for window in self.windows[:-1]:  # Skip message window
             canvas = window.winfo_children()[0]
             canvas.configure(bg = color)
+            # Ensure proper transparency is maintained
+            window.attributes("-alpha", self.current_alpha)
         
         # Show all windows
         for window in self.windows:
@@ -638,7 +664,7 @@ class ScreenOutline:
 
     def show_tint(self):
         """Show the red screen tint"""
-        if not self.root or not self.tint_window or not self.show_tint:
+        if not self.root or not self.tint_window or not self.show_red_tint:
             return
         
         # Configure the tint window with red background

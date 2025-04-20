@@ -342,12 +342,19 @@ class HabitKickerGUI(QMainWindow):
         # Volume slider
         volume_layout = QHBoxLayout()
         volume_label = QLabel("Alarm Volume:")
+        self.volume_label = volume_label  # Store reference to label
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
         self.volume_slider.setValue(self.settings["alarm_volume"])  # Use saved value
         self.volume_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.volume_slider.setTickInterval(10)
         self.volume_value_label = QLabel(f"{self.settings['alarm_volume']}%")
+        
+        # Set initial enabled state based on tint setting
+        show_tint = self.settings["show_red_tint"]
+        self.volume_slider.setEnabled(show_tint)
+        self.volume_value_label.setEnabled(show_tint)
+        self.volume_label.setEnabled(show_tint)
         
         volume_layout.addWidget(volume_label)
         volume_layout.addWidget(self.volume_slider)
@@ -635,9 +642,11 @@ class HabitKickerGUI(QMainWindow):
         if hasattr(self, 'camera') and self.camera is not None:
             # Set the property that controls whether outlines should be shown
             self.camera.screen_outline.show_outline_enabled = show_outline
-            # If outlines are disabled and an outline is currently visible, hide it
-            if not show_outline and self.camera.screen_outline.is_showing:
-                self.camera.screen_outline.hide_outline()
+            # Update the outline transparency instead of hiding it
+            if not show_outline:
+                self.camera.screen_outline.set_outline_transparency(0)
+            else:
+                self.camera.screen_outline.set_outline_transparency(1)
 
     def toggle_tint(self, state):
         """Toggle tint on/off"""
@@ -648,6 +657,11 @@ class HabitKickerGUI(QMainWindow):
         
         print(f"Tint {'enabled' if show_tint else 'disabled'}")
         
+        # Enable/disable volume controls based on tint state
+        self.volume_slider.setEnabled(show_tint)
+        self.volume_value_label.setEnabled(show_tint)
+        self.volume_label.setEnabled(show_tint)
+        
         # Update tint settings
         if hasattr(self, 'camera') and self.camera is not None:
             # Add a show_tint property to the screen_outline object
@@ -655,7 +669,10 @@ class HabitKickerGUI(QMainWindow):
             # If tint is currently showing and should be disabled, hide it
             if not show_tint and self.camera.screen_outline.is_tinted:
                 self.camera.screen_outline.hide_tint()
-            
+            # If tint should be enabled and we're already in red outline state, show it
+            elif show_tint and self.camera.screen_outline.current_color == "red":
+                self.camera.screen_outline.show_tint()
+    
     def toggle_camera_window(self):
         """Toggle the camera window visibility"""
         self.toggle_panel()
