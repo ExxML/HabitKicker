@@ -139,7 +139,7 @@ class HabitKickerGUI(QMainWindow):
         # Create camera view widget
         self.camera_view = QLabel()
         self.camera_view.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.camera_view.setFixedSize(635, 396)
+        self.camera_view.setFixedSize(635, 413)
         self.camera_view.setStyleSheet("""
             background-color: #222222;
             border: 1px solid #444444;
@@ -151,7 +151,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Add calibration status section at the bottom of camera panel
         self.calibration_status_frame = QFrame()
-        self.calibration_status_frame.setFixedHeight(92)  # Set fixed height
+        self.calibration_status_frame.setFixedHeight(80)  # Set fixed height
         self.calibration_status_frame.setStyleSheet("""
             background-color: #333333;
             padding: 5px;
@@ -171,7 +171,7 @@ class HabitKickerGUI(QMainWindow):
         self.calibration_progress.setRange(0, 100)
         self.calibration_progress.setValue(0)
         self.calibration_progress.setTextVisible(True)
-        self.calibration_progress.setFixedHeight(35)
+        self.calibration_progress.setFixedHeight(25)
         self.calibration_progress.setStyleSheet("""
             QProgressBar {
                 border: 1px solid #555555;
@@ -200,7 +200,7 @@ class HabitKickerGUI(QMainWindow):
             background-color: #333333;
             padding: 5px;
         """)
-        delay_frame.setFixedHeight(55)
+        delay_frame.setFixedHeight(50)
         delay_layout = QVBoxLayout(delay_frame)
         delay_layout.setContentsMargins(10, 10, 10, 10)
         delay_layout.setSpacing(10)
