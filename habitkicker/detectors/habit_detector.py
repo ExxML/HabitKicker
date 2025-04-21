@@ -4,11 +4,10 @@ import numpy as np
 from habitkicker.config.landmark_config import LandmarkConfig
 
 class HabitDetector:
-    def __init__(self, max_nail_pulling_distance, max_hair_pulling_distance, max_finger_to_finger_distance):
+    def __init__(self, max_nail_pulling_distance, max_hair_pulling_distance):
         # Square the thresholds to avoid square root calculations
         self.NAIL_PULLING_THRESHOLD_SQ = max_nail_pulling_distance * max_nail_pulling_distance
         self.HAIR_PULLING_THRESHOLD_SQ = max_hair_pulling_distance * max_hair_pulling_distance
-        self.FINGER_TO_FINGER_THRESHOLD_SQ = max_finger_to_finger_distance * max_finger_to_finger_distance
         self.config = LandmarkConfig()
 
     def check_nail_biting(self, fingertip_pos, face_landmarks):
@@ -31,12 +30,12 @@ class HabitDetector:
             finger_to_thumb_sq = self._squared_distance(finger_pos, thumb_pos)
             
             return (finger_to_forehead_sq < self.HAIR_PULLING_THRESHOLD_SQ and 
-                   finger_to_thumb_sq < self.FINGER_TO_FINGER_THRESHOLD_SQ)
+                   finger_to_thumb_sq < self.HAIR_PULLING_THRESHOLD_SQ)
         return False
         
     def _squared_distance(self, point1, point2):
         """Calculate squared Euclidean distance between two points"""
-        # This is faster than np.linalg.norm as it avoids the square root
+        # Faster than np.linalg.norm as it avoids the square root
         dx = point1[0] - point2[0]
         dy = point1[1] - point2[1]
         return dx*dx + dy*dy 

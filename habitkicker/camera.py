@@ -10,9 +10,9 @@ from habitkicker.utils.mediapipe_handler import MediapipeHandler
 from habitkicker.utils.screen_overlay import ScreenOutline
 
 class Camera:
-    def __init__(self, max_nail_pulling_distance = 40, max_hair_pulling_distance = 50, max_finger_to_finger_distance = 50, slouch_threshold = 15):
+    def __init__(self, max_nail_pulling_distance = 40, max_hair_pulling_distance = 50, slouch_threshold = 15):
         self.mp_handler = MediapipeHandler()
-        self.habit_detector = HabitDetector(max_nail_pulling_distance, max_hair_pulling_distance, max_finger_to_finger_distance)
+        self.habit_detector = HabitDetector(max_nail_pulling_distance, max_hair_pulling_distance)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
         self.config = LandmarkConfig()
         self.show_landmarks = True
@@ -21,6 +21,11 @@ class Camera:
         self.calibration_complete_time = 0  # Track when calibration completed
         self.screen_outline = ScreenOutline()
         self.processing_delay = 0.5  # Default 2 FPS
+        
+        # Detection toggles
+        self.enable_nail_detection = True
+        self.enable_hair_detection = True
+        self.enable_slouch_detection = True
         
         # Cache for drawing styles to avoid recreating them each frame
         self._face_mesh_tesselation_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_tesselation_style()
@@ -47,8 +52,8 @@ class Camera:
     def _initialize_camera(self):
         """Initialize camera with specific settings"""
         cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 854)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
         cap.set(cv2.CAP_PROP_BRIGHTNESS, 150)
         cap.set(cv2.CAP_PROP_CONTRAST, 150)
@@ -295,7 +300,7 @@ class Camera:
 
                 # Process pose landmarks for slouch detection
                 slouching_detected = False
-                if pose_results.pose_landmarks:
+                if pose_results.pose_landmarks and self.enable_slouch_detection:
                     slouching_detected = self._process_pose_landmarks(frame, pose_results.pose_landmarks)
 
                 # Process hand landmarks and detect habits
@@ -309,8 +314,10 @@ class Camera:
                             frame, hand_landmarks, face_landmarks
                         )
                         # If either hand is doing the habit, mark it as detected
-                        nail_biting = nail_biting or hand_nail_biting
-                        hair_pulling = hair_pulling or hand_hair_pulling
+                        if self.enable_nail_detection:
+                            nail_biting = nail_biting or hand_nail_biting
+                        if self.enable_hair_detection:
+                            hair_pulling = hair_pulling or hand_hair_pulling
 
                 # Display alerts
                 self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)

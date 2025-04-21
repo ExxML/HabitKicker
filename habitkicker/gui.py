@@ -28,7 +28,9 @@ class HabitKickerGUI(QMainWindow):
         self.default_settings = {
             "nail_distance": 40,
             "hair_distance": 50,
-            "finger_distance": 50,
+            "nail_detection": True,
+            "hair_detection": True,
+            "slouch_detection": True,
             "show_notifications": True,
             "show_screen_outline": True,
             "show_red_tint": True,
@@ -285,7 +287,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Nail biting distance slider
         nail_layout = QHBoxLayout()
-        nail_label = QLabel("Max Nail Biting Distance:         ")
+        nail_label = QLabel("Max Nail Biting Distance:  ")
         self.nail_slider = QSlider(Qt.Orientation.Horizontal)
         self.nail_slider.setRange(0, 100)
         self.nail_slider.setValue(self.settings["nail_distance"])  # Use saved value
@@ -300,7 +302,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Hair pulling distance slider
         hair_layout = QHBoxLayout()
-        hair_label = QLabel("Max Hair Pulling Distance:       ")
+        hair_label = QLabel("Max Hair Pulling Distance:")
         self.hair_slider = QSlider(Qt.Orientation.Horizontal)
         self.hair_slider.setRange(0, 100)
         self.hair_slider.setValue(self.settings["hair_distance"])  # Use saved value
@@ -313,20 +315,44 @@ class HabitKickerGUI(QMainWindow):
         hair_layout.addWidget(self.hair_value_label)
         detection_layout.addLayout(hair_layout)
         
-        # Finger to finger distance slider
-        finger_layout = QHBoxLayout()
-        finger_label = QLabel("Max Finger to Finger Distance:")
-        self.finger_slider = QSlider(Qt.Orientation.Horizontal)
-        self.finger_slider.setRange(0, 100)
-        self.finger_slider.setValue(self.settings["finger_distance"])  # Use saved value
-        self.finger_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
-        self.finger_slider.setTickInterval(10)
-        self.finger_value_label = QLabel(str(self.settings["finger_distance"]))
+        # Add detection toggles
+        toggle_layout = QHBoxLayout()  # Changed to horizontal layout
+        toggle_layout.setSpacing(18)  # Set spacing between toggles
         
-        finger_layout.addWidget(finger_label)
-        finger_layout.addWidget(self.finger_slider)
-        finger_layout.addWidget(self.finger_value_label)
-        detection_layout.addLayout(finger_layout)
+        # Nail detection toggle
+        nail_toggle_layout = QHBoxLayout()
+        nail_toggle_label = QLabel("Nail Biting:")
+        self.nail_toggle = QCheckBox()
+        self.nail_toggle.setChecked(self.settings["nail_detection"])
+        self.nail_toggle.stateChanged.connect(self.toggle_nail_detection)
+        nail_toggle_layout.addWidget(nail_toggle_label)
+        nail_toggle_layout.addWidget(self.nail_toggle)
+        toggle_layout.addLayout(nail_toggle_layout)
+        
+        # Hair detection toggle
+        hair_toggle_layout = QHBoxLayout()
+        hair_toggle_label = QLabel("Hair Pulling:")
+        self.hair_toggle = QCheckBox()
+        self.hair_toggle.setChecked(self.settings["hair_detection"])
+        self.hair_toggle.stateChanged.connect(self.toggle_hair_detection)
+        hair_toggle_layout.addWidget(hair_toggle_label)
+        hair_toggle_layout.addWidget(self.hair_toggle)
+        toggle_layout.addLayout(hair_toggle_layout)
+        
+        # Slouch detection toggle
+        slouch_toggle_layout = QHBoxLayout()
+        slouch_toggle_label = QLabel("Slouching:")
+        self.slouch_toggle = QCheckBox()
+        self.slouch_toggle.setChecked(self.settings["slouch_detection"])
+        self.slouch_toggle.stateChanged.connect(self.toggle_slouch_detection)
+        slouch_toggle_layout.addWidget(slouch_toggle_label)
+        slouch_toggle_layout.addWidget(self.slouch_toggle)
+        toggle_layout.addLayout(slouch_toggle_layout)
+        
+        # Add stretch at the end to keep toggles left-aligned
+        toggle_layout.addStretch()
+        
+        detection_layout.addLayout(toggle_layout)
         
         # Add restore defaults button
         restore_layout = QHBoxLayout()
@@ -339,7 +365,6 @@ class HabitKickerGUI(QMainWindow):
         # Connect sliders to update functions
         self.nail_slider.valueChanged.connect(self.update_nail_value)
         self.hair_slider.valueChanged.connect(self.update_hair_value)
-        self.finger_slider.valueChanged.connect(self.update_finger_value)
         
         main_layout.addWidget(detection_frame)
         
@@ -569,12 +594,20 @@ class HabitKickerGUI(QMainWindow):
         # Update sliders
         self.nail_slider.setValue(self.default_settings["nail_distance"])
         self.hair_slider.setValue(self.default_settings["hair_distance"])
-        self.finger_slider.setValue(self.default_settings["finger_distance"])
         
         # Update settings
         self.settings["nail_distance"] = self.default_settings["nail_distance"]
         self.settings["hair_distance"] = self.default_settings["hair_distance"]
-        self.settings["finger_distance"] = self.default_settings["finger_distance"]
+        
+        # Update detection toggles
+        self.nail_toggle.setChecked(True)
+        self.hair_toggle.setChecked(True)
+        self.slouch_toggle.setChecked(True)
+        
+        # Update settings for detection toggles
+        self.settings["nail_detection"] = True
+        self.settings["hair_detection"] = True
+        self.settings["slouch_detection"] = True
         
         # Save settings
         self.save_settings()
@@ -583,7 +616,9 @@ class HabitKickerGUI(QMainWindow):
         if hasattr(self, 'camera') and self.camera is not None:
             self.camera.habit_detector.NAIL_PULLING_THRESHOLD_SQ = self.default_settings["nail_distance"] * self.default_settings["nail_distance"]
             self.camera.habit_detector.HAIR_PULLING_THRESHOLD_SQ = self.default_settings["hair_distance"] * self.default_settings["hair_distance"]
-            self.camera.habit_detector.FINGER_TO_FINGER_THRESHOLD_SQ = self.default_settings["finger_distance"] * self.default_settings["finger_distance"]
+            self.camera.enable_nail_detection = True
+            self.camera.enable_hair_detection = True
+            self.camera.enable_slouch_detection = True
         
     def create_section_frame(self, title):
         """Create a framed section with title"""
@@ -628,16 +663,6 @@ class HabitKickerGUI(QMainWindow):
         # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
             self.camera.habit_detector.HAIR_PULLING_THRESHOLD_SQ = value * value
-        
-    def update_finger_value(self, value):
-        """Update the finger to finger distance value label"""
-        self.finger_value_label.setText(str(value))
-        # Update settings
-        self.settings["finger_distance"] = value
-        self.save_settings()
-        # Update camera if running
-        if hasattr(self, 'camera') and self.camera is not None:
-            self.camera.habit_detector.FINGER_TO_FINGER_THRESHOLD_SQ = value * value
         
     def update_volume_value(self, value):
         """Update the volume value label"""
@@ -752,7 +777,7 @@ class HabitKickerGUI(QMainWindow):
                 # Check calibration status periodically
                 self.calibration_timer = QTimer()
                 self.calibration_timer.timeout.connect(self.check_calibration_status)
-                self.calibration_timer.start(500)  # Check every 500ms
+                self.calibration_timer.start(1000)  # Check every second
 
             except Exception as e:
                 print(f"Error starting calibration: {e}")
@@ -820,16 +845,19 @@ class HabitKickerGUI(QMainWindow):
             if not hasattr(self, 'camera') or self.camera is None:
                 nail_distance = self.settings["nail_distance"]
                 hair_distance = self.settings["hair_distance"]
-                finger_distance = self.settings["finger_distance"]
                 
                 self.camera = Camera(
                     max_nail_pulling_distance=nail_distance,
-                    max_hair_pulling_distance=hair_distance,
-                    max_finger_to_finger_distance=finger_distance
+                    max_hair_pulling_distance=hair_distance
                 )
                 
                 # Set camera processing delay
                 self.camera.processing_delay = 1.0 / self.settings["camera_fps"] # Convert FPS to seconds
+                
+                # Configure detection settings
+                self.camera.enable_nail_detection = self.settings["nail_detection"]
+                self.camera.enable_hair_detection = self.settings["hair_detection"]
+                self.camera.enable_slouch_detection = self.settings["slouch_detection"]
                 
                 # Configure notification and outline settings
                 if hasattr(self.camera.screen_outline, 'notification_visible'):
@@ -887,6 +915,47 @@ class HabitKickerGUI(QMainWindow):
         super().resizeEvent(event)
         # Update camera feed when window is resized
         self.update_camera_feed()
+
+    def toggle_nail_detection(self, state):
+        """Toggle nail detection on/off"""
+        enabled = state == Qt.CheckState.Checked.value
+        # Update settings
+        self.settings["nail_detection"] = enabled
+        self.save_settings()
+        # Update nail detection slider state
+        self.nail_slider.setEnabled(enabled)
+        self.nail_value_label.setEnabled(enabled)
+        # Update camera if running
+        if hasattr(self, 'camera') and self.camera is not None:
+            self.camera.enable_nail_detection = enabled
+        print(f"Nail detection {'enabled' if enabled else 'disabled'}")
+        
+    def toggle_hair_detection(self, state):
+        """Toggle hair detection on/off"""
+        enabled = state == Qt.CheckState.Checked.value
+        # Update settings
+        self.settings["hair_detection"] = enabled
+        self.save_settings()
+        # Update hair detection slider state
+        self.hair_slider.setEnabled(enabled)
+        self.hair_value_label.setEnabled(enabled)
+        # Update camera if running
+        if hasattr(self, 'camera') and self.camera is not None:
+            self.camera.enable_hair_detection = enabled
+        print(f"Hair detection {'enabled' if enabled else 'disabled'}")
+        
+    def toggle_slouch_detection(self, state):
+        """Toggle slouch detection on/off"""
+        enabled = state == Qt.CheckState.Checked.value
+        # Update settings
+        self.settings["slouch_detection"] = enabled
+        self.save_settings()
+        # Update calibration button state
+        self.calibrate_button.setEnabled(enabled)
+        # Update camera if running
+        if hasattr(self, 'camera') and self.camera is not None:
+            self.camera.enable_slouch_detection = enabled
+        print(f"Slouch detection {'enabled' if enabled else 'disabled'}")
 
 def main():
     app = QApplication(sys.argv)
