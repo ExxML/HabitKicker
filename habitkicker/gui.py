@@ -116,7 +116,7 @@ class HabitKickerGUI(QMainWindow):
         self.camera_panel_content = QWidget()
         camera_panel_layout = QVBoxLayout(self.camera_panel_content)
         camera_panel_layout.setContentsMargins(10, 0, 0, 22) # No margin on right border
-        camera_panel_layout.setSpacing(20)
+        camera_panel_layout.setSpacing(16)
         camera_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # Align contents to top
         
         # Add camera panel header
@@ -125,8 +125,8 @@ class HabitKickerGUI(QMainWindow):
         camera_header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         camera_header.setStyleSheet("""
             color: #FFFFFF;
-            margin-top: 40px;
-            margin-bottom: 20px;
+            margin-top: 42px;
+            margin-bottom: 22px;
         """)
         camera_panel_layout.addWidget(camera_header)
         
@@ -151,7 +151,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Add calibration status section at the bottom of camera panel
         self.calibration_status_frame = QFrame()
-        self.calibration_status_frame.setFixedHeight(80)  # Set fixed height
+        self.calibration_status_frame.setFixedHeight(92)  # Set fixed height
         self.calibration_status_frame.setStyleSheet("""
             background-color: #333333;
             padding: 5px;
@@ -171,7 +171,7 @@ class HabitKickerGUI(QMainWindow):
         self.calibration_progress.setRange(0, 100)
         self.calibration_progress.setValue(0)
         self.calibration_progress.setTextVisible(True)
-        self.calibration_progress.setFixedHeight(30)
+        self.calibration_progress.setFixedHeight(35)
         self.calibration_progress.setStyleSheet("""
             QProgressBar {
                 border: 1px solid #555555;
@@ -771,6 +771,10 @@ class HabitKickerGUI(QMainWindow):
                 self.calibration_message.setText("Preparing for calibration...")
                 self.calibration_progress.setValue(0)
                 
+                # Store current processing delay and set to 0 for calibration
+                self.camera.stored_processing_delay = self.camera.processing_delay
+                self.camera.processing_delay = 0
+                
                 self.camera.start_calibration()
                 self.calibration_status.setText("Status: Calibrating...")
                 
@@ -782,6 +786,9 @@ class HabitKickerGUI(QMainWindow):
             except Exception as e:
                 print(f"Error starting calibration: {e}")
                 self.calibration_status.setText("Status: Calibration failed")
+                # Restore processing delay if there's an error
+                if hasattr(self.camera, 'stored_processing_delay'):
+                    self.camera.processing_delay = self.camera.stored_processing_delay
         else:
             print("Camera not initialized. Start the application first.")
             self.calibration_status.setText("Status: Camera not initialized")
@@ -796,6 +803,11 @@ class HabitKickerGUI(QMainWindow):
                             
             if is_calibrated:
                 self.calibration_status.setText("Status: Calibrated")
+                
+                # Restore the original processing delay if calibration is complete
+                if hasattr(self.camera, 'stored_processing_delay'):
+                    self.camera.processing_delay = self.camera.stored_processing_delay
+                    delattr(self.camera, 'stored_processing_delay')
                 
                 # If calibration just completed, make sure we update the panel UI
                 if just_completed:
@@ -817,6 +829,10 @@ class HabitKickerGUI(QMainWindow):
                 
                 # If no longer calibrating but not calibrated, something went wrong
                 if not self.camera.is_calibrating:
+                    # Restore the processing delay if calibration failed
+                    if hasattr(self.camera, 'stored_processing_delay'):
+                        self.camera.processing_delay = self.camera.stored_processing_delay
+                        delattr(self.camera, 'stored_processing_delay')
                     if hasattr(self, 'calibration_timer') and self.calibration_timer.isActive():
                         self.calibration_timer.stop()
         else:
