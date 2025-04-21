@@ -39,9 +39,6 @@ class Camera:
         self._yellow = (0, 255, 255)
         self._yellow_alert = (255, 255, 0)
         
-        # Window name constant
-        self._window_name = 'HabitKicker Debug Window'
-        
         # Current frame for external access
         self.current_frame = None
         
@@ -268,10 +265,6 @@ class Camera:
         """Background thread function for camera processing"""
         cap = self._initialize_camera()
         self.cap = cap
-        
-        # Start with calibration if not already calibrated
-        if not self.slouch_detector.calibrated:
-            self.start_calibration()
         
         while self.running:
             # Get and process frame
