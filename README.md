@@ -13,6 +13,7 @@ A computer vision application to detect and break unwanted habits like nail-biti
 - User-friendly GUI with dark mode
 - Configurable notifications and alerts
 - Live camera feed with visual feedback
+  - Modifiable FPS **(⭐2-5 FPS is recommended for most systems to conserve resources)**
 
 ## Requirements
 

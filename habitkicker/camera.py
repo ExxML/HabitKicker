@@ -20,6 +20,7 @@ class Camera:
         self.is_calibrating = False
         self.calibration_complete_time = 0  # Track when calibration completed
         self.screen_outline = ScreenOutline()
+        self.processing_delay = 0.5  # Default 2 FPS
         
         # Cache for drawing styles to avoid recreating them each frame
         self._face_mesh_tesselation_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_tesselation_style()
@@ -281,6 +282,9 @@ class Camera:
                 hands_results = self.mp_handler.hands.process(rgb_frame)
                 face_results = self.mp_handler.face_mesh.process(rgb_frame)
                 pose_results = self.mp_handler.pose.process(rgb_frame)
+
+                # Add a small delay to throttle processing rate
+                time.sleep(self.processing_delay)
 
                 # Process face landmarks
                 face_landmarks = {}

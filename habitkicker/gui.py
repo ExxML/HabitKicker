@@ -32,7 +32,8 @@ class HabitKickerGUI(QMainWindow):
             "show_notifications": True,
             "show_screen_outline": True,
             "show_red_tint": True,
-            "alarm_volume": 10
+            "alarm_volume": 10,
+            "camera_fps": 2  # Default 2 FPS
         }
         
         # Current settings
@@ -114,12 +115,17 @@ class HabitKickerGUI(QMainWindow):
         camera_panel_layout = QVBoxLayout(self.camera_panel_content)
         camera_panel_layout.setContentsMargins(10, 0, 0, 22) # No margin on right border
         camera_panel_layout.setSpacing(20)
+        camera_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # Align contents to top
         
         # Add camera panel header
         camera_header = QLabel("Camera Feed")
         camera_header.setFont(QFont("Arial", 16, QFont.Weight.Bold))
         camera_header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        camera_header.setStyleSheet("color: #FFFFFF; margin-bottom: 10px;")
+        camera_header.setStyleSheet("""
+            color: #FFFFFF;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        """)
         camera_panel_layout.addWidget(camera_header)
         
         # Add separator
@@ -131,7 +137,7 @@ class HabitKickerGUI(QMainWindow):
         # Create camera view widget
         self.camera_view = QLabel()
         self.camera_view.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.camera_view.setFixedSize(635, 441)
+        self.camera_view.setFixedSize(635, 396)
         self.camera_view.setStyleSheet("""
             background-color: #222222;
             border: 1px solid #444444;
@@ -143,20 +149,19 @@ class HabitKickerGUI(QMainWindow):
         
         # Add calibration status section at the bottom of camera panel
         self.calibration_status_frame = QFrame()
+        self.calibration_status_frame.setFixedHeight(80)  # Set fixed height
         self.calibration_status_frame.setStyleSheet("""
             background-color: #333333;
-            border: 1px solid #444444;
-            border-radius: 4px;
             padding: 5px;
         """)
         calibration_status_layout = QVBoxLayout(self.calibration_status_frame)
-        calibration_status_layout.setContentsMargins(10, 10, 10, 10)
-        calibration_status_layout.setSpacing(10)
+        calibration_status_layout.setContentsMargins(10, 5, 10, 5)
+        calibration_status_layout.setSpacing(5)
         
         # Add calibration message label
         self.calibration_message = QLabel("No calibration in progress")
         self.calibration_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.calibration_message.setStyleSheet("color: #FFFFFF; font-size: 14px;")
+        self.calibration_message.setStyleSheet("color: #FFFFFF; font-size: 12px;")
         calibration_status_layout.addWidget(self.calibration_message)
         
         # Add progress bar for calibration
@@ -164,18 +169,19 @@ class HabitKickerGUI(QMainWindow):
         self.calibration_progress.setRange(0, 100)
         self.calibration_progress.setValue(0)
         self.calibration_progress.setTextVisible(True)
+        self.calibration_progress.setFixedHeight(30)
         self.calibration_progress.setStyleSheet("""
             QProgressBar {
                 border: 1px solid #555555;
-                border-radius: 4px;
+                border-radius: 3px;
                 background-color: #222222;
                 text-align: center;
                 color: white;
-                height: 25px;
+                font-size: 10px;
             }
             QProgressBar::chunk {
                 background-color: #00AA00;
-                border-radius: 3px;
+                border-radius: 2px;
             }
         """)
         calibration_status_layout.addWidget(self.calibration_progress)
@@ -185,6 +191,43 @@ class HabitKickerGUI(QMainWindow):
         
         # Add to camera panel layout
         camera_panel_layout.addWidget(self.calibration_status_frame)
+        
+        # Add camera delay slider
+        delay_frame = QFrame()
+        delay_frame.setStyleSheet("""
+            background-color: #333333;
+            padding: 5px;
+        """)
+        delay_frame.setFixedHeight(55)
+        delay_layout = QVBoxLayout(delay_frame)
+        delay_layout.setContentsMargins(10, 10, 10, 10)
+        delay_layout.setSpacing(10)
+        
+        # Add delay slider controls
+        delay_controls = QHBoxLayout()
+        delay_label = QLabel("Camera FPS:")
+        self.delay_label = delay_label  # Store reference to label
+        self.delay_slider = QSlider(Qt.Orientation.Horizontal)
+        self.delay_slider.setRange(1, 60)  # 1 to 60 FPS
+        initial_fps = self.settings["camera_fps"]
+        self.delay_slider.setValue(initial_fps)
+        self.delay_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.delay_slider.setTickInterval(5)
+        self.delay_value_label = QLabel(f"{initial_fps} FPS")
+        
+        delay_controls.addWidget(delay_label)
+        delay_controls.addWidget(self.delay_slider)
+        delay_controls.addWidget(self.delay_value_label)
+        delay_layout.addLayout(delay_controls)
+        
+        # Connect delay slider
+        self.delay_slider.valueChanged.connect(self.update_delay_value)
+        
+        # Add to camera panel layout
+        camera_panel_layout.addWidget(delay_frame)
+        
+        # Add stretch at the bottom to push everything up
+        camera_panel_layout.addStretch()
         
         # Add widgets to panel layout
         panel_layout.addWidget(self.panel_bar)
@@ -612,6 +655,16 @@ class HabitKickerGUI(QMainWindow):
                 self.camera.screen_outline.alarm_sound.set_volume(volume)
                 self.camera.screen_outline.audio_initialized = True
     
+    def update_delay_value(self, value):
+        """Update the camera processing delay value label"""
+        self.delay_value_label.setText(f"{value} FPS")
+        # Update settings
+        self.settings["camera_fps"] = value
+        self.save_settings()
+        # Update camera delay if running
+        if hasattr(self, 'camera') and self.camera is not None:
+            self.camera.processing_delay = 1.0 / value  # Convert FPS directly to seconds
+    
     def toggle_notifications(self, state):
         """Toggle notifications on/off"""
         show_notifications = state == Qt.CheckState.Checked.value
@@ -774,6 +827,9 @@ class HabitKickerGUI(QMainWindow):
                     max_hair_pulling_distance=hair_distance,
                     max_finger_to_finger_distance=finger_distance
                 )
+                
+                # Set camera processing delay
+                self.camera.processing_delay = 1.0 / self.settings["camera_fps"] # Convert FPS to seconds
                 
                 # Configure notification and outline settings
                 if hasattr(self.camera.screen_outline, 'notification_visible'):
