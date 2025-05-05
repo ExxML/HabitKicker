@@ -281,7 +281,6 @@ class HabitKickerGUI(QMainWindow):
         calibration_layout.addWidget(self.calibration_status)
         
         main_layout.addWidget(calibration_frame)
-        self.toggle_slouch_detection(self.settings["slouch_detection"])
         
         # Detection settings section
         detection_frame, detection_layout = self.create_section_frame("Detection Settings")
@@ -300,7 +299,6 @@ class HabitKickerGUI(QMainWindow):
         nail_layout.addWidget(self.nail_slider)
         nail_layout.addWidget(self.nail_value_label)
         detection_layout.addLayout(nail_layout)
-        self.toggle_nail_detection(self.settings["nail_detection"])
         
         # Hair pulling distance slider
         hair_layout = QHBoxLayout()
@@ -316,7 +314,6 @@ class HabitKickerGUI(QMainWindow):
         hair_layout.addWidget(self.hair_slider)
         hair_layout.addWidget(self.hair_value_label)
         detection_layout.addLayout(hair_layout)
-        self.toggle_hair_detection(self.settings["hair_detection"])
         
         # Add detection toggles
         toggle_layout = QHBoxLayout()  # Changed to horizontal layout
@@ -331,6 +328,9 @@ class HabitKickerGUI(QMainWindow):
         nail_toggle_layout.addWidget(nail_toggle_label)
         nail_toggle_layout.addWidget(self.nail_toggle)
         toggle_layout.addLayout(nail_toggle_layout)
+        nail_detection = self.settings["nail_detection"]
+        self.nail_slider.setEnabled(nail_detection)
+        self.nail_value_label.setEnabled(nail_detection)
         
         # Hair detection toggle
         hair_toggle_layout = QHBoxLayout()
@@ -341,7 +341,10 @@ class HabitKickerGUI(QMainWindow):
         hair_toggle_layout.addWidget(hair_toggle_label)
         hair_toggle_layout.addWidget(self.hair_toggle)
         toggle_layout.addLayout(hair_toggle_layout)
-        
+        hair_detection = self.settings["hair_detection"]
+        self.hair_slider.setEnabled(hair_detection)
+        self.hair_value_label.setEnabled(hair_detection)
+
         # Slouch detection toggle
         slouch_toggle_layout = QHBoxLayout()
         slouch_toggle_label = QLabel("Slouching:")
@@ -351,7 +354,9 @@ class HabitKickerGUI(QMainWindow):
         slouch_toggle_layout.addWidget(slouch_toggle_label)
         slouch_toggle_layout.addWidget(self.slouch_toggle)
         toggle_layout.addLayout(slouch_toggle_layout)
-        
+        slouch_detection = self.settings["slouch_detection"]
+        self.calibrate_button.setEnabled(slouch_detection)
+
         # Add stretch at the end to keep toggles left-aligned
         toggle_layout.addStretch()
         
@@ -899,7 +904,23 @@ class HabitKickerGUI(QMainWindow):
                 print("HabitKicker started successfully")
             else:
                 print("HabitKicker is already running")
-                
+
+            # Reset settings
+            self.notification_checkbox.setEnabled(True)
+            self.outline_checkbox.setEnabled(True)
+            self.tint_checkbox.setEnabled(True)
+            self.notification_checkbox.setChecked(self.settings["show_notifications"])
+            self.outline_checkbox.setChecked(self.settings["show_screen_outline"])
+            self.tint_checkbox.setChecked(self.settings["show_red_tint"])
+            if self.settings["show_red_tint"]:
+                self.volume_slider.setEnabled(True)
+                self.volume_value_label.setEnabled(True)
+                self.volume_label.setEnabled(True)
+            else:
+                self.volume_slider.setEnabled(False)
+                self.volume_value_label.setEnabled(False)
+                self.volume_label.setEnabled(False)
+
         except Exception as e:
             print(f"Error starting HabitKicker: {e}")
             self.start_button.setText("Start HabitKicker")
@@ -911,7 +932,28 @@ class HabitKickerGUI(QMainWindow):
             # Update UI
             self.start_button.setText("Start HabitKicker")
             self.application_running = False
-            
+
+            # Disable alerts
+            if hasattr(self, 'camera') and self.camera is not None:
+                if hasattr(self.camera.screen_outline, 'notification_visible'):
+                    self.camera.screen_outline.show_notification = False
+                    if self.camera.screen_outline.notification_window and self.camera.screen_outline.notification_window.winfo_exists():
+                        self.camera.screen_outline.notification_window.withdraw()
+
+                self.camera.screen_outline.show_outline_enabled = False
+                self.camera.screen_outline.set_outline_transparency(0)
+
+                self.camera.screen_outline.show_red_tint = False
+                if self.camera.screen_outline.is_tinted:
+                    self.camera.screen_outline.hide_tint()
+
+            self.notification_checkbox.setEnabled(False)
+            self.outline_checkbox.setEnabled(False)
+            self.tint_checkbox.setEnabled(False)
+            self.volume_slider.setEnabled(False)
+            self.volume_value_label.setEnabled(False)
+            self.volume_label.setEnabled(False)
+
             # Stop camera and cleanup
             if hasattr(self, 'camera') and self.camera is not None:
                 self.camera.stop_camera()
