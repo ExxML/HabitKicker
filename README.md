@@ -7,9 +7,8 @@ A computer vision application to detect and break unwanted habits like nail-biti
 - Real-time habit detection using computer vision
 - Posture calibration for personalized monitoring
 - Customizable detection settings for:
-  - Nail biting distance
-  - Hair pulling detection
-  - Finger proximity alerts
+  - Nail biting distance (distance from finger to mouth)
+  - Hair pulling distance (distance from finger to hair)
 - User-friendly GUI with dark mode
 - Configurable notifications and alerts
 - Live camera feed with visual feedback
@@ -17,14 +16,13 @@ A computer vision application to detect and break unwanted habits like nail-biti
 
 ## Requirements
 
-- Python 3.7 or higher
+- Python 3.10.11
 - Dependencies:
-  - OpenCV (opencv-python) >= 4.8.0
-  - MediaPipe >= 0.10.0
-  - NumPy >= 1.24.0
-  - PyQt6 >= 6.4.0
-  - QDarkStyle >= 3.1.0
-  - Pygame >= 2.1.0
+  - OpenCV (opencv-python) == 4.11.0.86
+  - MediaPipe == 0.10.14
+  - PyQt6 == 6.8.1
+  - QDarkStyle == 3.2.3
+  - Pygame == 2.6.1
 
 ## Installation
 
@@ -34,23 +32,25 @@ git clone https://github.com/cmd-Exx/HabitKicker.git
 cd HabitKicker
 ```
 
-2. Install the required packages:
+2. Create and activate a local environment:
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+3. Install the required packages:
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-Run the application using:
+Run the application using HabitKicker.exe
+
+or from source:
 
 ```bash
-python -m habitkicker
-```
-
-or if installed via pip:
-
-```bash
-habitkicker
+python -m habitkicker.main
 ```
 
 ## Getting Started
