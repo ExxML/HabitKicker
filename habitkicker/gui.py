@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QSize, QEasingCurve
 from PyQt6.QtGui import QScreen, QFont, QIcon, QColor, QPalette, QPixmap, QImage
 import qdarkstyle
-from habitkicker.camera import Camera
+from camera import Camera
 import cv2
 from pathlib import Path
 
@@ -281,6 +281,7 @@ class HabitKickerGUI(QMainWindow):
         calibration_layout.addWidget(self.calibration_status)
         
         main_layout.addWidget(calibration_frame)
+        self.toggle_slouch_detection(self.settings["slouch_detection"])
         
         # Detection settings section
         detection_frame, detection_layout = self.create_section_frame("Detection Settings")
@@ -299,6 +300,7 @@ class HabitKickerGUI(QMainWindow):
         nail_layout.addWidget(self.nail_slider)
         nail_layout.addWidget(self.nail_value_label)
         detection_layout.addLayout(nail_layout)
+        self.toggle_nail_detection(self.settings["nail_detection"])
         
         # Hair pulling distance slider
         hair_layout = QHBoxLayout()
@@ -314,6 +316,7 @@ class HabitKickerGUI(QMainWindow):
         hair_layout.addWidget(self.hair_slider)
         hair_layout.addWidget(self.hair_value_label)
         detection_layout.addLayout(hair_layout)
+        self.toggle_hair_detection(self.settings["hair_detection"])
         
         # Add detection toggles
         toggle_layout = QHBoxLayout()  # Changed to horizontal layout

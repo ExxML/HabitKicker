@@ -3,11 +3,11 @@
 import cv2
 import time
 import threading
-from habitkicker.config.landmark_config import LandmarkConfig
-from habitkicker.detectors.habit_detector import HabitDetector
-from habitkicker.detectors.slouch_detector import SlouchDetector
-from habitkicker.utils.mediapipe_handler import MediapipeHandler
-from habitkicker.utils.screen_overlay import ScreenOutline
+from config.landmark_config import LandmarkConfig
+from detectors.habit_detector import HabitDetector
+from detectors.slouch_detector import SlouchDetector
+from utils.mediapipe_handler import MediapipeHandler
+from utils.screen_overlay import ScreenOutline
 
 class Camera:
     def __init__(self, max_nail_pulling_distance = 40, max_hair_pulling_distance = 50, slouch_threshold = 15):
