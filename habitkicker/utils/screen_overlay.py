@@ -4,6 +4,8 @@ import time
 import threading
 import tkinter as tk
 from tkinter import Toplevel, Canvas
+from win32gui import SetWindowLong, GetWindowLong, SetLayeredWindowAttributes
+from win32con import WS_EX_LAYERED, WS_EX_TRANSPARENT, GWL_EXSTYLE, LWA_ALPHA
 import pygame.mixer
 import os
 
@@ -155,12 +157,14 @@ class ScreenOutline:
         window.attributes("-topmost", True)  # Keep on top
         window.attributes("-alpha", self.alpha)  # Set transparency
         
-        # Make window click-through
-        window.attributes("-transparentcolor", "black")
-        
         # Create canvas for drawing
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
         canvas.pack(fill = tk.BOTH, expand = True)
+
+        # Make window click-through
+        window.attributes("-transparentcolor", "white")
+        window.config(bg = "white")
+        self._setClickThrough(canvas.winfo_id())
         
         return window
     
@@ -179,9 +183,6 @@ class ScreenOutline:
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
         window.attributes("-alpha", self.alpha)  # Set transparency
-        
-        # Make window click-through
-        window.attributes("-transparentcolor", "black")
         
         # Create canvas for drawing text
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
@@ -224,6 +225,11 @@ class ScreenOutline:
         canvas.create_text(10, 56, anchor = "nw", text = "", fill = "white", 
                           font = ("Calibri", 13), width = width - 20, tags = "notification_text")
         
+        # Make window click-through
+        window.attributes("-transparentcolor", "white")
+        window.config(bg = "white")
+        self._setClickThrough(canvas.winfo_id())
+
         # Hide the window initially
         window.withdraw()
         
@@ -243,20 +249,31 @@ class ScreenOutline:
         window.attributes("-topmost", True)  # Keep on top
         window.attributes("-alpha", 0.2)  # Set transparency to 20%
         
-        # Make window click-through
-        window.attributes("-transparentcolor", "black")
-        
         # Create canvas for drawing
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
         canvas.pack(fill = tk.BOTH, expand = True)
         
+        # Make window click-through
+        window.attributes("-transparentcolor", "white")
+        window.config(bg = "white")
+        self._setClickThrough(canvas.winfo_id())
+
         # Hide the window initially
         window.withdraw()
         
         self.tint_window = window
     
+    def _setClickThrough(self, hwnd):
+        try:
+            styles = GetWindowLong(hwnd, GWL_EXSTYLE)
+            styles = WS_EX_LAYERED | WS_EX_TRANSPARENT
+            SetWindowLong(hwnd, GWL_EXSTYLE, styles)
+            SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA)
+        except Exception as e:
+            print(e)
+
     def set_outline_transparency(self, alpha):
-        """Set the transparency of the outline windows
+        """Set the transparency of the outline windows to hide and show the outline
         
         Args:
             alpha: Transparency value (0-1, where 0 is fully transparent and 1 is opaque)

@@ -3,3 +3,4 @@ mediapipe==0.10.14
 PyQt6==6.8.1
 QDarkStyle==3.2.3
 pygame==2.6.1
+pywin32==310
