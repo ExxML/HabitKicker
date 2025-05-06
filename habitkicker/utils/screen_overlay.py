@@ -19,7 +19,7 @@ class ScreenOverlay:
         """
         self.thickness = thickness
         self.alpha = alpha
-        self.current_alpha = alpha  # Add this line to track current transparency
+        self.current_alpha = alpha  # Tracks current transparency
         self.root = None
         self.windows = []
         self.current_color = None
@@ -768,13 +768,13 @@ class ScreenOverlay:
             Appropriate background color for the notification
         """
         if outline_color == "orange":
-            return "#663300"  # Dark orange
+            return "#663300"  # Orange
         elif outline_color == "red":
-            return "#660000"  # Dark red
+            return "#660000"  # Red
         elif outline_color == "green2":
-            return "#006600"  # Dark green
+            return "#006600"  # Green
         else:
-            return "black"
+            return None
 
     def play_alarm(self):
         """Play the alarm sound"""

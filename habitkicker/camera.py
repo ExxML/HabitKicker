@@ -253,7 +253,7 @@ class Camera:
         return self.current_frame
     
     def start_camera_no_window(self):
-        """Start camera processing in a background thread without showing its own window"""
+        """Start camera processing in a background thread"""
         self.running = True
         self.thread = threading.Thread(target=self._camera_thread_function)
         self.thread.daemon = True
