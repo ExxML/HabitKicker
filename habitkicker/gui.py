@@ -1018,6 +1018,16 @@ class HabitKickerGUI(QMainWindow):
             self.camera.enable_slouch_detection = enabled
         print(f"Slouch detection {'enabled' if enabled else 'disabled'}")
 
+    def keyPressEvent(self, event):
+        """Handle key press events"""
+        # Check if Ctrl+C is pressed
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_C:
+            # Call calibrate_posture method
+            self.calibrate_posture()
+        else:
+            # Pass other key events to parent class
+            super().keyPressEvent(event)
+
 def main():
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt6())
