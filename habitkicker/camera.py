@@ -23,9 +23,9 @@ class Camera:
         self.processing_delay = 0.5  # Default 2 FPS
         
         # Detection toggles
-        self.enable_nail_detection = True
-        self.enable_hair_detection = True
-        self.enable_slouch_detection = True
+        self.enable_nail_detection = False
+        self.enable_hair_detection = False
+        self.enable_slouch_detection = False
         
         # Cache for drawing styles to avoid recreating them each frame
         self._face_mesh_tesselation_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_tesselation_style()

@@ -622,8 +622,8 @@ class HabitKickerGUI(QMainWindow):
         
         # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
-            self.camera.habit_detector.NAIL_PULLING_THRESHOLD_SQ = self.default_settings["nail_distance"] * self.default_settings["nail_distance"]
-            self.camera.habit_detector.HAIR_PULLING_THRESHOLD_SQ = self.default_settings["hair_distance"] * self.default_settings["hair_distance"]
+            self.camera.habit_detector.NAIL_PULLING_THRESHOLD = self.default_settings["nail_distance"]
+            self.camera.habit_detector.HAIR_PULLING_THRESHOLD = self.default_settings["hair_distance"]
             self.camera.enable_nail_detection = True
             self.camera.enable_hair_detection = True
             self.camera.enable_slouch_detection = True
@@ -660,7 +660,7 @@ class HabitKickerGUI(QMainWindow):
         self.save_settings()
         # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
-            self.camera.habit_detector.NAIL_PULLING_THRESHOLD_SQ = value * value
+            self.camera.habit_detector.NAIL_PULLING_THRESHOLD = value
         
     def update_hair_value(self, value):
         """Update the hair pulling distance value label"""
@@ -670,7 +670,7 @@ class HabitKickerGUI(QMainWindow):
         self.save_settings()
         # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
-            self.camera.habit_detector.HAIR_PULLING_THRESHOLD_SQ = value * value
+            self.camera.habit_detector.HAIR_PULLING_THRESHOLD= value
         
     def update_volume_value(self, value):
         """Update the volume value label"""
@@ -876,24 +876,11 @@ class HabitKickerGUI(QMainWindow):
                 # Set camera processing delay
                 self.camera.processing_delay = 1.0 / self.settings["camera_fps"] # Convert FPS to seconds
                 
-                # Configure detection settings
-                self.camera.enable_nail_detection = self.settings["nail_detection"]
-                self.camera.enable_hair_detection = self.settings["hair_detection"]
-                self.camera.enable_slouch_detection = self.settings["slouch_detection"]
-                
-                # Configure notification and outline settings
-                if hasattr(self.camera.screen_overlay, 'notification_visible'):
-                    self.camera.screen_overlay.notification_visible = self.settings["show_notifications"]
-                
-                # Configure outline and tint settings
-                self.camera.screen_overlay.show_outline_enabled = self.settings["show_screen_outline"]
-                self.camera.screen_overlay.show_red_tint = self.settings["show_red_tint"]
-                
                 # Set alarm volume
                 volume = self.settings["alarm_volume"] / 100.0  # Convert percentage to 0-1 range
                 self.camera.screen_overlay.alarm_volume = volume
                 
-                # Wait until tkinter windows are set up
+                # Wait until tkinter windows are initialized
                 while not self.camera.screen_overlay.root or not self.camera.screen_overlay.windows:
                     time.sleep(0.1)
 
@@ -925,6 +912,19 @@ class HabitKickerGUI(QMainWindow):
                 # Check calibration status
                 self.check_calibration_status()
                 
+                # Wait until camera is fully initialized
+                while not self.camera.cap:
+                    time.sleep(0.1)
+
+                # Configure detection settings
+                self.camera.enable_nail_detection = self.settings["nail_detection"]
+                self.camera.enable_hair_detection = self.settings["hair_detection"]
+                self.camera.enable_slouch_detection = self.settings["slouch_detection"]
+
+                self.camera.screen_overlay.notification_visible = self.settings["show_notifications"]
+                self.camera.screen_overlay.show_outline_enabled = self.settings["show_screen_outline"]
+                self.camera.screen_overlay.show_red_tint = self.settings["show_red_tint"]
+
                 print("HabitKicker initialized successfully")
             else:
                 print("HabitKicker is already running")
