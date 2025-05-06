@@ -184,6 +184,9 @@ class ScreenOverlay:
         window.attributes("-topmost", True)  # Keep on top
         window.attributes("-alpha", self.alpha)  # Set transparency
         
+        # Make window transparent
+        window.attributes("-transparentcolor", "black")
+
         # Create canvas for drawing text
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
         canvas.pack(fill = tk.BOTH, expand = True)
