@@ -9,7 +9,7 @@ from win32con import WS_EX_LAYERED, WS_EX_TRANSPARENT, GWL_EXSTYLE, LWA_ALPHA
 import pygame.mixer
 import os
 
-class ScreenOutline:
+class ScreenOverlay:
     def __init__(self, thickness = 10, alpha = 1):
         """Initialize the screen outline overlay
         
