@@ -271,7 +271,7 @@ class HabitKickerGUI(QMainWindow):
         calibration_frame, calibration_layout = self.create_section_frame("Posture Calibration")
         
         # Calibration button
-        self.calibrate_button = QPushButton("Calibrate Posture")
+        self.calibrate_button = QPushButton("Calibrate Posture (Ctrl+C)")
         self.calibrate_button.setMinimumHeight(50)
         self.calibrate_button.clicked.connect(self.calibrate_posture)
         calibration_layout.addWidget(self.calibrate_button)
@@ -381,7 +381,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Notification toggle
         notification_layout = QHBoxLayout()
-        notification_label = QLabel("Show Notifications:")
+        notification_label = QLabel("Show Notifications (3s):")
         self.notification_checkbox = QCheckBox()
         self.notification_checkbox.setChecked(self.settings["show_notifications"])  # Use saved value
         self.notification_checkbox.stateChanged.connect(self.toggle_notifications)
@@ -393,7 +393,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Screen outline toggle
         outline_layout = QHBoxLayout()
-        outline_label = QLabel("Show Screen Outline:")
+        outline_label = QLabel("Show Screen Outline (3s):")
         self.outline_checkbox = QCheckBox()
         self.outline_checkbox.setChecked(self.settings["show_screen_outline"])  # Use saved value
         self.outline_checkbox.stateChanged.connect(self.toggle_screen_outline)
@@ -405,7 +405,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Tint toggle
         tint_layout = QHBoxLayout()
-        tint_label = QLabel("Show Tint:")
+        tint_label = QLabel("Show Tint (6s):")
         self.tint_checkbox = QCheckBox()
         self.tint_checkbox.setChecked(self.settings["show_red_tint"])  # Use saved value
         self.tint_checkbox.stateChanged.connect(self.toggle_tint)
@@ -417,7 +417,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Volume slider
         volume_layout = QHBoxLayout()
-        volume_label = QLabel("Alarm Volume:")
+        volume_label = QLabel("Alarm Volume (9s):")
         self.volume_label = volume_label  # Store reference to label
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
@@ -1021,7 +1021,7 @@ class HabitKickerGUI(QMainWindow):
     def keyPressEvent(self, event):
         """Handle key press events"""
         # Check if Ctrl+C is pressed
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_C:
+        if event.modifiers() and self.settings["slouch_detection"] and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_C:
             # Call calibrate_posture method
             self.calibrate_posture()
         else:
