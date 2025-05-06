@@ -7,10 +7,10 @@ import json
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QSlider, QLabel, QCheckBox, QFrame, QSizePolicy,
-    QSpacerItem, QGraphicsOpacityEffect, QProgressBar
+    QProgressBar
 )
-from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QSize, QEasingCurve
-from PyQt6.QtGui import QScreen, QFont, QIcon, QColor, QPalette, QPixmap, QImage
+from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
+from PyQt6.QtGui import QFont, QPixmap, QImage
 import qdarkstyle
 from camera import Camera
 import cv2
@@ -405,7 +405,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Tint toggle
         tint_layout = QHBoxLayout()
-        tint_label = QLabel("Show Tint (6s):")
+        tint_label = QLabel("Show Tint (9s):")
         self.tint_checkbox = QCheckBox()
         self.tint_checkbox.setChecked(self.settings["show_red_tint"])  # Use saved value
         self.tint_checkbox.stateChanged.connect(self.toggle_tint)
@@ -417,7 +417,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Volume slider
         volume_layout = QHBoxLayout()
-        volume_label = QLabel("Alarm Volume (9s):")
+        volume_label = QLabel("Alarm Volume (12s):")
         self.volume_label = volume_label  # Store reference to label
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
@@ -678,15 +678,16 @@ class HabitKickerGUI(QMainWindow):
         # Update settings
         self.settings["alarm_volume"] = value
         self.save_settings()
+
         # Update volume in screen outline if available
-        if hasattr(self, 'camera') and self.camera is not None and hasattr(self.camera, 'screen_outline'):
+        if hasattr(self, 'camera') and self.camera and hasattr(self.camera, 'screen_overlay'):
             # Convert percentage to a value between 0 and 1
             volume = value / 100.0
-            self.camera.screen_outline.alarm_volume = volume
+            self.camera.screen_overlay.alarm_volume = volume
             # Update the sound volume if it exists
-            if hasattr(self.camera.screen_outline, 'alarm_sound') and self.camera.screen_outline.alarm_sound:
-                self.camera.screen_outline.alarm_sound.set_volume(volume)
-                self.camera.screen_outline.audio_initialized = True
+            if hasattr(self.camera.screen_overlay, 'alarm_sound') and self.camera.screen_overlay.alarm_sound:
+                self.camera.screen_overlay.alarm_sound.set_volume(volume)
+                self.camera.screen_overlay.audio_initialized = True
     
     def update_delay_value(self, value):
         """Update the camera processing delay value label"""
@@ -705,15 +706,14 @@ class HabitKickerGUI(QMainWindow):
         self.settings["show_notifications"] = show_notifications
         self.save_settings()
         
-        print(f"Notifications {'enabled' if show_notifications else 'disabled'}")
-        
         # Update notification settings in camera if applicable
         if hasattr(self, 'camera') and self.camera is not None:
-            if hasattr(self.camera.screen_outline, 'notification_visible'):
-                self.camera.screen_outline.show_notification = show_notifications
+            if hasattr(self.camera.screen_overlay, 'notification_visible'):
+                self.camera.screen_overlay.show_notification = show_notifications
                 # If notifications are disabled and a notification is currently visible, hide it
-                if not show_notifications and self.camera.screen_outline.notification_window and self.camera.screen_outline.notification_window.winfo_exists():
-                    self.camera.screen_outline.notification_window.withdraw()
+                if not show_notifications and self.camera.screen_overlay.notification_window and self.camera.screen_overlay.notification_window.winfo_exists():
+                    self.camera.screen_overlay.notification_window.withdraw()
+            print(f"Notifications {'enabled' if show_notifications else 'disabled'}")
         
     def toggle_screen_outline(self, state):
         """Toggle screen outline on/off"""
@@ -722,17 +722,16 @@ class HabitKickerGUI(QMainWindow):
         self.settings["show_screen_outline"] = show_outline
         self.save_settings()
         
-        print(f"Screen outline {'enabled' if show_outline else 'disabled'}")
-        
         # Update screen outline settings
         if hasattr(self, 'camera') and self.camera is not None:
             # Set the property that controls whether outlines should be shown
-            self.camera.screen_outline.show_outline_enabled = show_outline
+            self.camera.screen_overlay.show_outline_enabled = show_outline
             # Update the outline transparency instead of hiding it
             if not show_outline:
-                self.camera.screen_outline.set_outline_transparency(0)
+                self.camera.screen_overlay.set_outline_transparency(0)
             else:
-                self.camera.screen_outline.set_outline_transparency(1)
+                self.camera.screen_overlay.set_outline_transparency(1)
+            print(f"Screen outline {'enabled' if show_outline else 'disabled'}")
 
     def toggle_tint(self, state):
         """Toggle tint on/off"""
@@ -741,8 +740,6 @@ class HabitKickerGUI(QMainWindow):
         self.settings["show_red_tint"] = show_tint
         self.save_settings()
         
-        print(f"Tint {'enabled' if show_tint else 'disabled'}")
-        
         # Enable/disable volume controls based on tint state
         self.volume_slider.setEnabled(show_tint)
         self.volume_value_label.setEnabled(show_tint)
@@ -750,14 +747,15 @@ class HabitKickerGUI(QMainWindow):
         
         # Update tint settings
         if hasattr(self, 'camera') and self.camera is not None:
-            # Add a show_tint property to the screen_outline object
-            self.camera.screen_outline.show_red_tint = show_tint
+            # Add a show_tint property to the screen_overlay object
+            self.camera.screen_overlay.show_red_tint = show_tint
             # If tint is currently showing and should be disabled, hide it
-            if not show_tint and self.camera.screen_outline.is_tinted:
-                self.camera.screen_outline.hide_tint()
+            if not show_tint and self.camera.screen_overlay.is_tinted:
+                self.camera.screen_overlay.hide_tint()
             # If tint should be enabled and we're already in red outline state, show it
-            elif show_tint and self.camera.screen_outline.current_color == "red":
-                self.camera.screen_outline.show_tint()
+            elif show_tint and self.camera.screen_overlay.current_color == "red":
+                self.camera.screen_overlay.show_tint()
+            print(f"Tint {'enabled' if show_tint else 'disabled'}")
     
     def toggle_camera_window(self):
         """Toggle the camera window visibility"""
@@ -884,43 +882,53 @@ class HabitKickerGUI(QMainWindow):
                 self.camera.enable_slouch_detection = self.settings["slouch_detection"]
                 
                 # Configure notification and outline settings
-                if hasattr(self.camera.screen_outline, 'notification_visible'):
-                    self.camera.screen_outline.notification_visible = self.settings["show_notifications"]
+                if hasattr(self.camera.screen_overlay, 'notification_visible'):
+                    self.camera.screen_overlay.notification_visible = self.settings["show_notifications"]
                 
                 # Configure outline and tint settings
-                self.camera.screen_outline.show_outline_enabled = self.settings["show_screen_outline"]
-                self.camera.screen_outline.show_red_tint = self.settings["show_red_tint"]
+                self.camera.screen_overlay.show_outline_enabled = self.settings["show_screen_outline"]
+                self.camera.screen_overlay.show_red_tint = self.settings["show_red_tint"]
                 
                 # Set alarm volume
                 volume = self.settings["alarm_volume"] / 100.0  # Convert percentage to 0-1 range
-                self.camera.screen_outline.alarm_volume = volume
+                self.camera.screen_overlay.alarm_volume = volume
                 
+                # Wait until tkinter windows are set up
+                while not self.camera.screen_overlay.root or not self.camera.screen_overlay.windows:
+                    time.sleep(0.1)
+
+                # Reset settings
+                self.notification_checkbox.setEnabled(True)
+                self.outline_checkbox.setEnabled(True)
+                self.tint_checkbox.setEnabled(True)
+
+                self.notification_checkbox.setChecked(self.settings["show_notifications"])
+                self.outline_checkbox.setChecked(self.settings["show_screen_outline"])
+                self.tint_checkbox.setChecked(self.settings["show_red_tint"])
+
+                self.toggle_notifications(self.settings["show_notifications"] * 2)
+                self.toggle_screen_outline(self.settings["show_screen_outline"] * 2)
+                self.toggle_tint(self.settings["show_red_tint"] * 2)
+
+                if self.settings["show_red_tint"]:
+                    self.volume_slider.setEnabled(True)
+                    self.volume_value_label.setEnabled(True)
+                    self.volume_label.setEnabled(True)
+                else:
+                    self.volume_slider.setEnabled(False)
+                    self.volume_value_label.setEnabled(False)
+                    self.volume_label.setEnabled(False)
+
                 # Start camera processing
                 self.camera.start_camera_no_window()
                 
                 # Check calibration status
                 self.check_calibration_status()
                 
-                print("HabitKicker started successfully")
+                print("HabitKicker initialized successfully")
             else:
                 print("HabitKicker is already running")
-
-            # Reset settings
-            self.notification_checkbox.setEnabled(True)
-            self.outline_checkbox.setEnabled(True)
-            self.tint_checkbox.setEnabled(True)
-            self.notification_checkbox.setChecked(self.settings["show_notifications"])
-            self.outline_checkbox.setChecked(self.settings["show_screen_outline"])
-            self.tint_checkbox.setChecked(self.settings["show_red_tint"])
-            if self.settings["show_red_tint"]:
-                self.volume_slider.setEnabled(True)
-                self.volume_value_label.setEnabled(True)
-                self.volume_label.setEnabled(True)
-            else:
-                self.volume_slider.setEnabled(False)
-                self.volume_value_label.setEnabled(False)
-                self.volume_label.setEnabled(False)
-
+                
         except Exception as e:
             print(f"Error starting HabitKicker: {e}")
             self.start_button.setText("Start HabitKicker")
@@ -935,17 +943,17 @@ class HabitKickerGUI(QMainWindow):
 
             # Disable alerts
             if hasattr(self, 'camera') and self.camera is not None:
-                if hasattr(self.camera.screen_outline, 'notification_visible'):
-                    self.camera.screen_outline.show_notification = False
-                    if self.camera.screen_outline.notification_window and self.camera.screen_outline.notification_window.winfo_exists():
-                        self.camera.screen_outline.notification_window.withdraw()
+                if hasattr(self.camera.screen_overlay, 'notification_visible'):
+                    self.camera.screen_overlay.show_notification = False
+                    if self.camera.screen_overlay.notification_window and self.camera.screen_overlay.notification_window.winfo_exists():
+                        self.camera.screen_overlay.notification_window.withdraw()
 
-                self.camera.screen_outline.show_outline_enabled = False
-                self.camera.screen_outline.set_outline_transparency(0)
+                self.camera.screen_overlay.show_outline_enabled = False
+                self.camera.screen_overlay.set_outline_transparency(0)
 
-                self.camera.screen_outline.show_red_tint = False
-                if self.camera.screen_outline.is_tinted:
-                    self.camera.screen_outline.hide_tint()
+                self.camera.screen_overlay.show_red_tint = False
+                if self.camera.screen_overlay.is_tinted:
+                    self.camera.screen_overlay.hide_tint()
 
             self.notification_checkbox.setEnabled(False)
             self.outline_checkbox.setEnabled(False)
