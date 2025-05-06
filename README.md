@@ -5,7 +5,7 @@ A computer vision application to detect and break unwanted habits like nail-biti
 ## Features
 
 - Real-time habit detection using computer vision
-- Posture calibration for personalized monitoring using `Ctrl+C` shortcut
+- Posture calibration for personalized monitoring
 - Customizable detection settings for:
   - Nail biting distance (distance from finger to mouth)
   - Hair pulling distance (distance from finger to hair)
