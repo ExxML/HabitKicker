@@ -207,8 +207,6 @@ class Camera:
             cv2.putText(frame, "Hair Pulling Detected!", (50, 90),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, self._red, 2)
         
-        # Slouching alert is handled by the slouch detector itself
-        
         # Update screen outline with habit status
         self.screen_outline.update_habit_status(
             nail_biting_detected, 
@@ -263,14 +261,18 @@ class Camera:
     
     def _camera_thread_function(self):
         """Background thread function for camera processing"""
-        cap = self._initialize_camera()
-        self.cap = cap
+        self.cap = self._initialize_camera()
         
         while self.running:
             # Get and process frame
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
+
+            # If camera is unavailable (i.e. sleeping)
             if not ret:
-                break
+                print("Frame grab failed. Trying to reinitialize...")
+                time.sleep(1)
+                self.cap = self._initialize_camera()
+                continue
 
             try:
                 # Convert and process frame with MediaPipe - only convert once
