@@ -7,7 +7,7 @@ from config.landmark_config import LandmarkConfig
 from detectors.habit_detector import HabitDetector
 from detectors.slouch_detector import SlouchDetector
 from utils.mediapipe_handler import MediapipeHandler
-from utils.screen_overlay import ScreenOutline
+from utils.screen_overlay import ScreenOverlay
 
 class Camera:
     def __init__(self, max_nail_pulling_distance = 40, max_hair_pulling_distance = 50, slouch_threshold = 15):
@@ -19,7 +19,7 @@ class Camera:
         self.cap = None
         self.is_calibrating = False
         self.calibration_complete_time = 0  # Track when calibration completed
-        self.screen_outline = ScreenOutline()
+        self.screen_overlay = ScreenOverlay()
         self.processing_delay = 0.5  # Default 2 FPS
         
         # Detection toggles
@@ -208,7 +208,7 @@ class Camera:
                        cv2.FONT_HERSHEY_SIMPLEX, 1, self._red, 2)
         
         # Update screen outline with habit status
-        self.screen_outline.update_habit_status(
+        self.screen_overlay.update_habit_status(
             nail_biting_detected, 
             hair_pulling_detected, 
             slouching_detected
