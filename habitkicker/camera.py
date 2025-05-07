@@ -22,6 +22,9 @@ class Camera:
         self.screen_overlay = ScreenOverlay()
         self.processing_delay = 0.5  # Default 2 FPS
         
+        # Camera initialization flag
+        self.camera_initialized = False
+        
         # Detection toggles
         self.enable_nail_detection = False
         self.enable_hair_detection = False
@@ -263,6 +266,10 @@ class Camera:
         """Background thread function for camera processing"""
         self.cap = self._initialize_camera()
         
+        # Set initialization flag to True only after successful frame grab
+        initialization_frames = 0
+        initialization_required = 3  # Require 3 successful frames before considering camera initialized
+        
         while self.running:
             # Get and process frame
             ret, frame = self.cap.read()
@@ -272,9 +279,19 @@ class Camera:
                 print("Frame grab failed. Trying to reinitialize...")
                 time.sleep(1)
                 self.cap = self._initialize_camera()
+                # Reset initialization counter on failure
+                initialization_frames = 0
+                self.camera_initialized = False
                 continue
 
             try:
+                # Check if camera is fully initialized
+                if not self.camera_initialized:
+                    initialization_frames += 1
+                    if initialization_frames >= initialization_required:
+                        self.camera_initialized = True
+                        print("Camera fully initialized")
+                
                 # Convert and process frame with MediaPipe - only convert once
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 
@@ -295,14 +312,14 @@ class Camera:
 
                 # Process pose landmarks for slouch detection
                 slouching_detected = False
-                if pose_results.pose_landmarks and self.enable_slouch_detection:
+                if pose_results.pose_landmarks and self.enable_slouch_detection and self.camera_initialized:
                     slouching_detected = self._process_pose_landmarks(frame, pose_results.pose_landmarks)
 
                 # Process hand landmarks and detect habits
                 nail_biting = False
                 hair_pulling = False
                 
-                if hands_results.multi_hand_landmarks and face_landmarks:
+                if hands_results.multi_hand_landmarks and face_landmarks and self.camera_initialized:
                     for hand_landmarks in hands_results.multi_hand_landmarks:
                         # Process each hand and combine the results
                         hand_nail_biting, hand_hair_pulling = self._process_hand_landmarks(
@@ -314,8 +331,13 @@ class Camera:
                         if self.enable_hair_detection:
                             hair_pulling = hair_pulling or hand_hair_pulling
 
-                # Display alerts
-                self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)
+                # Display alerts only if camera is initialized
+                if self.camera_initialized:
+                    self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)
+                else:
+                    # Display initialization message
+                    cv2.putText(frame, "Initializing camera...", (50, 50),
+                              cv2.FONT_HERSHEY_SIMPLEX, 1, self._yellow, 2)
 
                 # Store the current frame for external access
                 self.current_frame = frame.copy()

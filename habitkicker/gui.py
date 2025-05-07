@@ -701,61 +701,61 @@ class HabitKickerGUI(QMainWindow):
     
     def toggle_notifications(self, state):
         """Toggle notifications on/off"""
-        show_notifications = state == Qt.CheckState.Checked.value
+        enabled = state == Qt.CheckState.Checked.value
         # Update settings
-        self.settings["show_notifications"] = show_notifications
+        self.settings["show_notifications"] = enabled
         self.save_settings()
         
-        # Update notification settings in camera if applicable
+        # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
-            if hasattr(self.camera.screen_overlay, 'notification_visible'):
-                self.camera.screen_overlay.show_notification = show_notifications
-                # If notifications are disabled and a notification is currently visible, hide it
-                if not show_notifications and self.camera.screen_overlay.notification_window and self.camera.screen_overlay.notification_window.winfo_exists():
-                    self.camera.screen_overlay.notification_window.withdraw()
-            print(f"Notifications {'enabled' if show_notifications else 'disabled'}")
+            if self.camera.camera_initialized:
+                self.camera.screen_overlay.notification_visible = enabled
+            else:
+                # Camera not initialized yet, the check_camera_initialization method will apply settings when ready
+                print("Camera initializing, notification setting will be applied when ready")
+                
+        print(f"Notifications {'enabled' if enabled else 'disabled'}")
         
     def toggle_screen_outline(self, state):
         """Toggle screen outline on/off"""
-        show_outline = state == Qt.CheckState.Checked.value
+        enabled = state == Qt.CheckState.Checked.value
         # Update settings
-        self.settings["show_screen_outline"] = show_outline
+        self.settings["show_screen_outline"] = enabled
         self.save_settings()
         
-        # Update screen outline settings
+        # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
-            # Set the property that controls whether outlines should be shown
-            self.camera.screen_overlay.show_outline_enabled = show_outline
-            # Update the outline transparency instead of hiding it
-            if not show_outline:
-                self.camera.screen_overlay.set_outline_transparency(0)
+            if self.camera.camera_initialized:
+                self.camera.screen_overlay.show_outline_enabled = enabled
             else:
-                self.camera.screen_overlay.set_outline_transparency(1)
-            print(f"Screen outline {'enabled' if show_outline else 'disabled'}")
-
+                # Camera not initialized yet, the check_camera_initialization method will apply settings when ready
+                print("Camera initializing, screen outline setting will be applied when ready")
+                
+        print(f"Screen outline {'enabled' if enabled else 'disabled'}")
+    
     def toggle_tint(self, state):
-        """Toggle tint on/off"""
-        show_tint = state == Qt.CheckState.Checked.value
+        """Toggle red tint on/off"""
+        enabled = state == Qt.CheckState.Checked.value
         # Update settings
-        self.settings["show_red_tint"] = show_tint
+        self.settings["show_red_tint"] = enabled
         self.save_settings()
         
-        # Enable/disable volume controls based on tint state
-        self.volume_slider.setEnabled(show_tint)
-        self.volume_value_label.setEnabled(show_tint)
-        self.volume_label.setEnabled(show_tint)
+        # Update volume slider state based on tint setting
+        self.volume_slider.setEnabled(enabled)
+        self.volume_value_label.setEnabled(enabled)
+        self.volume_label.setEnabled(enabled)
         
-        # Update tint settings
+        # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
-            # Add a show_tint property to the screen_overlay object
-            self.camera.screen_overlay.show_red_tint = show_tint
-            # If tint is currently showing and should be disabled, hide it
-            if not show_tint and self.camera.screen_overlay.is_tinted:
-                self.camera.screen_overlay.hide_tint()
-            # If tint should be enabled and we're already in red outline state, show it
-            elif show_tint and self.camera.screen_overlay.current_color == "red":
-                self.camera.screen_overlay.show_tint()
-            print(f"Tint {'enabled' if show_tint else 'disabled'}")
+            if self.camera.camera_initialized:
+                self.camera.screen_overlay.show_red_tint = enabled
+                # Update audio state
+                self.camera.screen_overlay.update_audio_state()
+            else:
+                # Camera not initialized yet, the check_camera_initialization method will apply settings when ready
+                print("Camera initializing, red tint setting will be applied when ready")
+                
+        print(f"Red tint {'enabled' if enabled else 'disabled'}")
     
     def toggle_camera_window(self):
         """Toggle the camera window visibility"""
@@ -912,20 +912,21 @@ class HabitKickerGUI(QMainWindow):
                 # Check calibration status
                 self.check_calibration_status()
                 
-                # Wait until camera is fully initialized
-                while not self.camera.cap:
-                    time.sleep(0.1)
+                # We'll configure detection settings but they won't be active until camera is initialized
+                self.camera.enable_nail_detection = False
+                self.camera.enable_hair_detection = False
+                self.camera.enable_slouch_detection = False
 
-                # Configure detection settings
-                self.camera.enable_nail_detection = self.settings["nail_detection"]
-                self.camera.enable_hair_detection = self.settings["hair_detection"]
-                self.camera.enable_slouch_detection = self.settings["slouch_detection"]
+                self.camera.screen_overlay.notification_visible = False
+                self.camera.screen_overlay.show_outline_enabled = False
+                self.camera.screen_overlay.show_red_tint = False
+                
+                # Start a timer to check for camera initialization
+                self.camera_init_timer = QTimer()
+                self.camera_init_timer.timeout.connect(self.check_camera_initialization)
+                self.camera_init_timer.start(500)  # Check every 500ms
 
-                self.camera.screen_overlay.notification_visible = self.settings["show_notifications"]
-                self.camera.screen_overlay.show_outline_enabled = self.settings["show_screen_outline"]
-                self.camera.screen_overlay.show_red_tint = self.settings["show_red_tint"]
-
-                print("HabitKicker initialized successfully")
+                print("HabitKicker initializing...")
             else:
                 print("HabitKicker is already running")
                 
@@ -934,40 +935,63 @@ class HabitKickerGUI(QMainWindow):
             self.start_button.setText("Start HabitKicker")
             self.application_running = False
             
+    def check_camera_initialization(self):
+        """Check if camera is initialized and enable detection features"""
+        if hasattr(self, 'camera') and self.camera is not None and self.camera.camera_initialized:
+            # Camera is initialized, enable detection features based on settings
+            self.camera.enable_nail_detection = self.settings["nail_detection"]
+            self.camera.enable_hair_detection = self.settings["hair_detection"]
+            self.camera.enable_slouch_detection = self.settings["slouch_detection"]
+
+            self.camera.screen_overlay.notification_visible = self.settings["show_notifications"]
+            self.camera.screen_overlay.show_outline_enabled = self.settings["show_screen_outline"]
+            self.camera.screen_overlay.show_red_tint = self.settings["show_red_tint"]
+            
+            print("Camera initialized, detection features enabled")
+            
+            # Stop the timer since we don't need to check anymore
+            self.camera_init_timer.stop()
+            
     def stop_application(self):
         """Stop the HabitKicker application"""
         try:
+            # Stop camera initialization timer if it exists
+            if hasattr(self, 'camera_init_timer') and self.camera_init_timer is not None:
+                self.camera_init_timer.stop()
+            
+            # Stop camera if running
+            if hasattr(self, 'camera') and self.camera is not None:
+                self.camera.stop_camera()
+                self.camera = None
+                
             # Update UI
             self.start_button.setText("Start HabitKicker")
             self.application_running = False
-
-            # Disable alerts
-            if hasattr(self, 'camera') and self.camera is not None:
-                if hasattr(self.camera.screen_overlay, 'notification_visible'):
-                    self.camera.screen_overlay.show_notification = False
-                    if self.camera.screen_overlay.notification_window and self.camera.screen_overlay.notification_window.winfo_exists():
-                        self.camera.screen_overlay.notification_window.withdraw()
-
-                self.camera.screen_overlay.show_outline_enabled = False
-                self.camera.screen_overlay.set_outline_transparency(0)
-
-                self.camera.screen_overlay.show_red_tint = False
-                if self.camera.screen_overlay.is_tinted:
-                    self.camera.screen_overlay.hide_tint()
-
+            
+            # Disable controls
             self.notification_checkbox.setEnabled(False)
             self.outline_checkbox.setEnabled(False)
             self.tint_checkbox.setEnabled(False)
             self.volume_slider.setEnabled(False)
             self.volume_value_label.setEnabled(False)
             self.volume_label.setEnabled(False)
-
-            # Stop camera and cleanup
-            if hasattr(self, 'camera') and self.camera is not None:
-                self.camera.stop_camera()
-                self.camera = None
+            self.nail_checkbox.setEnabled(False)
+            self.nail_slider.setEnabled(False)
+            self.nail_value_label.setEnabled(False)
+            self.hair_checkbox.setEnabled(False)
+            self.hair_slider.setEnabled(False)
+            self.hair_value_label.setEnabled(False)
+            self.slouch_checkbox.setEnabled(False)
+            self.calibrate_button.setEnabled(False)
+            
+            # Reset calibration status
+            self.calibration_status.setText("Status: Not calibrated")
+            
+            # Hide calibration status frame
+            if hasattr(self, 'calibration_status_frame'):
+                self.calibration_status_frame.setVisible(False)
                 
-            print("HabitKicker stopped successfully")
+            print("HabitKicker stopped")
             
         except Exception as e:
             print(f"Error stopping HabitKicker: {e}")
@@ -986,44 +1010,65 @@ class HabitKickerGUI(QMainWindow):
         self.update_camera_feed()
 
     def toggle_nail_detection(self, state):
-        """Toggle nail detection on/off"""
+        """Toggle nail biting detection"""
         enabled = state == Qt.CheckState.Checked.value
         # Update settings
         self.settings["nail_detection"] = enabled
         self.save_settings()
+        
         # Update nail detection slider state
         self.nail_slider.setEnabled(enabled)
         self.nail_value_label.setEnabled(enabled)
-        # Update camera if running
-        if hasattr(self, 'camera') and self.camera is not None:
-            self.camera.enable_nail_detection = enabled
-        print(f"Nail detection {'enabled' if enabled else 'disabled'}")
         
+        # Only update camera if it's initialized
+        if hasattr(self, 'camera') and self.camera is not None:
+            if self.camera.camera_initialized:
+                self.camera.enable_nail_detection = enabled
+            else:
+                # Camera not initialized yet, the check_camera_initialization method will apply settings when ready
+                print("Camera initializing, nail detection setting will be applied when ready")
+        
+        print(f"Nail detection {'enabled' if enabled else 'disabled'}")
+
     def toggle_hair_detection(self, state):
-        """Toggle hair detection on/off"""
+        """Toggle hair pulling detection"""
         enabled = state == Qt.CheckState.Checked.value
         # Update settings
         self.settings["hair_detection"] = enabled
         self.save_settings()
+        
         # Update hair detection slider state
         self.hair_slider.setEnabled(enabled)
         self.hair_value_label.setEnabled(enabled)
-        # Update camera if running
-        if hasattr(self, 'camera') and self.camera is not None:
-            self.camera.enable_hair_detection = enabled
-        print(f"Hair detection {'enabled' if enabled else 'disabled'}")
         
+        # Only update camera if it's initialized
+        if hasattr(self, 'camera') and self.camera is not None:
+            if self.camera.camera_initialized:
+                self.camera.enable_hair_detection = enabled
+            else:
+                # Camera not initialized yet, the check_camera_initialization method will apply settings when ready
+                print("Camera initializing, hair detection setting will be applied when ready")
+        
+        print(f"Hair detection {'enabled' if enabled else 'disabled'}")
+
     def toggle_slouch_detection(self, state):
-        """Toggle slouch detection on/off"""
+        """Toggle slouch detection"""
         enabled = state == Qt.CheckState.Checked.value
         # Update settings
         self.settings["slouch_detection"] = enabled
         self.save_settings()
+        
         # Update calibration button state
         self.calibrate_button.setEnabled(enabled)
-        # Update camera if running
+        
+        # Only update camera if it's initialized
         if hasattr(self, 'camera') and self.camera is not None:
-            self.camera.enable_slouch_detection = enabled
+            if self.camera.camera_initialized:
+                self.camera.enable_slouch_detection = enabled
+            else:
+                # Camera not initialized yet, the check_camera_initialization method will apply settings when ready
+                print("Camera initializing, slouch detection setting will be applied when ready")
+        
         print(f"Slouch detection {'enabled' if enabled else 'disabled'}")
 
     def keyPressEvent(self, event):
