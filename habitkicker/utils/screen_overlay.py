@@ -582,8 +582,9 @@ class ScreenOverlay:
                     # Also hide the tint if it's showing
                     if self.is_tinted:
                         self.hide_tint()
-                    # Show green outline for positive feedback
-                    self.show_outline("green2")
+                    # Only show green outline for positive feedback if there was a previous color (i.e. the app was not just initialized)
+                    if self.current_color:
+                        self.show_outline("green2")
                     self.green_feedback_active = True
                     self.green_start_time = current_time
                     # Don't show notification for green feedback
