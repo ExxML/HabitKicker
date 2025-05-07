@@ -37,20 +37,20 @@ class ScreenOverlay:
         
         # Alert escalation tracking
         self.orange_outline_start_time = 0  # When orange outline first appeared
-        self.red_outline_start_time = 0     # When red outline first appeared
-        self.escalation_threshold = 3.0     # Time before escalating to next alert level
+        self.red_outline_start_time = 0  # When red outline first appeared
+        self.escalation_threshold = 3.0  # Time before escalating to next alert level
         self.tint_window = None
         self.is_tinted = False
         
         # Feature toggle flags
-        self.show_notification = True      # Whether to show notifications
-        self.show_outline_enabled = True    # Whether to show the outline
-        self.show_red_tint = True               # Whether to show the tint
+        self.show_notification = True  # Whether to show notifications
+        self.show_outline_enabled = True  # Whether to show the outline
+        self.show_red_tint = True  # Whether to show the tint
         
         # Green feedback tracking
         self.green_feedback_active = False  # Whether green feedback is active
-        self.green_start_time = 0           # When green outline was shown
-        self.green_duration = 1.0           # How long to show green outline (seconds)
+        self.green_start_time = 0  # When green outline was shown
+        self.green_duration = 1.0  # How long to show green outline (seconds)
         
         # Notification window
         self.notification_window = None
@@ -67,7 +67,7 @@ class ScreenOverlay:
         self.audio_initialized = False
         self.alarm_sound = None
         self.tint_start_time = 0  # When the red tint was first shown
-        self.alarm_volume = 0.1  # Volume for the alarm sound
+        self.alarm_volume = 0.1  # Default volume for the alarm sound
         
         # Initialize tkinter in a separate thread
         self.init_thread = threading.Thread(target = self._init_tkinter)
@@ -250,7 +250,7 @@ class ScreenOverlay:
         window.geometry(f"{width}x{height}+0+0")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
-        window.attributes("-alpha", 0.2)  # Set transparency to 20%
+        window.attributes("-alpha", 0.1)  # Set transparency to 10%
         
         # Create canvas for drawing
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
