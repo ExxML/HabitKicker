@@ -22,13 +22,15 @@ class Camera:
         self.screen_overlay = ScreenOverlay()
         self.processing_delay = 0.5  # Default 2 FPS
         
-        # Camera initialization flag
-        self.camera_initialized = False
-        
-        # Detection toggles
+        # Detection toggles - disabled by default
         self.enable_nail_detection = False
         self.enable_hair_detection = False
         self.enable_slouch_detection = False
+        
+        # Alerts - disabled by default
+        self.screen_overlay.show_notification = False
+        self.screen_overlay.show_outline_enabled = False
+        self.screen_overlay.show_red_tint = False
         
         # Cache for drawing styles to avoid recreating them each frame
         self._face_mesh_tesselation_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_tesselation_style()
@@ -256,7 +258,7 @@ class Camera:
         return self.current_frame
     
     def start_camera_no_window(self):
-        """Start camera processing in a background thread"""
+        """Start camera processing in a background thread without showing its own window"""
         self.running = True
         self.thread = threading.Thread(target=self._camera_thread_function)
         self.thread.daemon = True
@@ -265,10 +267,6 @@ class Camera:
     def _camera_thread_function(self):
         """Background thread function for camera processing"""
         self.cap = self._initialize_camera()
-        
-        # Set initialization flag to True only after successful frame grab
-        initialization_frames = 0
-        initialization_required = 3  # Require 3 successful frames before considering camera initialized
         
         while self.running:
             # Get and process frame
@@ -279,19 +277,9 @@ class Camera:
                 print("Frame grab failed. Trying to reinitialize...")
                 time.sleep(1)
                 self.cap = self._initialize_camera()
-                # Reset initialization counter on failure
-                initialization_frames = 0
-                self.camera_initialized = False
                 continue
 
             try:
-                # Check if camera is fully initialized
-                if not self.camera_initialized:
-                    initialization_frames += 1
-                    if initialization_frames >= initialization_required:
-                        self.camera_initialized = True
-                        print("Camera fully initialized")
-                
                 # Convert and process frame with MediaPipe - only convert once
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 
@@ -312,14 +300,14 @@ class Camera:
 
                 # Process pose landmarks for slouch detection
                 slouching_detected = False
-                if pose_results.pose_landmarks and self.enable_slouch_detection and self.camera_initialized:
+                if pose_results.pose_landmarks and self.enable_slouch_detection:
                     slouching_detected = self._process_pose_landmarks(frame, pose_results.pose_landmarks)
 
                 # Process hand landmarks and detect habits
                 nail_biting = False
                 hair_pulling = False
                 
-                if hands_results.multi_hand_landmarks and face_landmarks and self.camera_initialized:
+                if hands_results.multi_hand_landmarks and face_landmarks:
                     for hand_landmarks in hands_results.multi_hand_landmarks:
                         # Process each hand and combine the results
                         hand_nail_biting, hand_hair_pulling = self._process_hand_landmarks(
@@ -331,13 +319,8 @@ class Camera:
                         if self.enable_hair_detection:
                             hair_pulling = hair_pulling or hand_hair_pulling
 
-                # Display alerts only if camera is initialized
-                if self.camera_initialized:
-                    self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)
-                else:
-                    # Display initialization message
-                    cv2.putText(frame, "Initializing camera...", (50, 50),
-                              cv2.FONT_HERSHEY_SIMPLEX, 1, self._yellow, 2)
+                # Display alerts
+                self._display_alerts(frame, nail_biting, hair_pulling, slouching_detected)
 
                 # Store the current frame for external access
                 self.current_frame = frame.copy()
