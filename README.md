@@ -23,8 +23,14 @@ A computer vision application to detect and break unwanted habits like nail-biti
   - PyQt6 == 6.8.1
   - QDarkStyle == 3.2.3
   - Pygame == 2.6.1
+- Hardware:
+  - Minimum 480p webcam
 
 ## Installation
+
+Run the application using HabitKicker.exe
+
+Or from source:
 
 1. Clone the repository:
 ```bash
@@ -43,14 +49,9 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Usage
-
-Run the application using HabitKicker.exe
-
-or from source:
-
+4. Run in terminal:
 ```bash
-python -m habitkicker.main
+python habitkicker\main.py
 ```
 
 ## Getting Started
@@ -60,6 +61,18 @@ python -m habitkicker.main
 3. Adjust the detection settings according to your preferences
 4. Enable/disable notifications and alerts as needed
 5. The application will monitor your habits and provide real-time feedback
+
+## Compile to .exe Using Nuitka
+
+1. Install Nuitka:
+```bash
+pip install nuitka
+```
+
+2. Generate .exe:
+```bash
+python -m nuitka --onefile --windows-console-mode=disable --windows-icon-from-ico=HabitKicker.ico --enable-plugin=tk-inter habitkicker\main.py
+```
 
 ## License
 
