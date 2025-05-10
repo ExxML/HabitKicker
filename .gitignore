@@ -1,4 +1,7 @@
 .venv
-TODO.md
-**/__pycache__/
 data
+**/__pycache__/
+main.build
+main.dist
+main.onefile-build
+TODO.md
