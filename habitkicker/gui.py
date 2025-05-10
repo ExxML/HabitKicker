@@ -23,6 +23,9 @@ class HabitKickerGUI(QMainWindow):
         self.calibration_dir = project_root / "data"
 
         super().__init__()
+        
+        # Set window flag to stay on top
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
 
         # Default settings
         self.default_settings = {
@@ -820,9 +823,8 @@ class HabitKickerGUI(QMainWindow):
                     self.update_calibration_status()
                 
                 # Close the slide-out panel after calibration is complete
-                if self.panel_expanded and not just_completed:
-                    # Wait a moment before closing the panel so user can see the completion
-                    QTimer.singleShot(2000, self.toggle_panel)
+                if self.panel_expanded:
+                    QTimer.singleShot(1000, self.toggle_panel)
                 
                 # Stop the timer if we were using one
                 if hasattr(self, 'calibration_timer') and self.calibration_timer.isActive():

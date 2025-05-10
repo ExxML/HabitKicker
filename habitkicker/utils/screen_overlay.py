@@ -56,7 +56,7 @@ class ScreenOverlay:
         self.notification_window = None
         self.notification_visible = False
         self.notification_animation_in_progress = False
-        self.notification_target_x = 11  # Target x position when fully visible
+        self.notification_target_pos = self.thickness + 7  # Target x position when fully visible
         self.notification_start_x = -300  # Start position off-screen
         self.notification_current_x = self.notification_start_x
         self.notification_animation_steps = 15  # Number of steps for animation
@@ -129,17 +129,17 @@ class ScreenOverlay:
         self.windows.append(left)
         
         # Create message window in top-left corner
-        msg_window = self._create_message_window(self.thickness + 10, 10, 400, 100)
+        msg_window = self._create_message_window(self.notification_target_pos, self.notification_target_pos, 400, 100)
         self.windows.append(msg_window)
         
         # Create notification window in top-left corner
-        self._create_notification_window(11, 11, 358, 168)
+        self._create_notification_window(self.notification_target_pos + 1, self.notification_target_pos + 1, 358, 168)
         
         # Create tint window (initially hidden)
         self._create_tint_window(width, height)
         
         # Hide all windows initially
-        self.hide_outline()
+        self.hide_notification_and_outline()
     
     def _create_outline_segment(self, x, y, width, height):
         """Create a single outline segment window
@@ -192,7 +192,7 @@ class ScreenOverlay:
         canvas.pack(fill = tk.BOTH, expand = True)
 
         # Add text item
-        canvas.create_text(10, 20, anchor = "nw", text = "", fill = "red", font = ("Calibri", 18), tags = "message")
+        canvas.create_text(10, 10, anchor = "nw", text = "", fill = "red", font = ("Calibri", 18), tags = "message")
         
         return window
     
@@ -208,7 +208,7 @@ class ScreenOverlay:
         window.geometry(f"{width}x{height}+{self.notification_start_x}+{y}")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
-        window.attributes("-alpha", 0.9)  # Set transparency
+        window.attributes("-alpha", 0.8)  # Set transparency
         
         # Create canvas for drawing
         canvas = Canvas(window, highlightthickness = 0, width = width, height = height)
@@ -226,7 +226,7 @@ class ScreenOverlay:
         
         # Add message text
         canvas.create_text(10, 56, anchor = "nw", text = "", fill = "white", 
-                          font = ("Calibri", 13), width = width - 20, tags = "notification_text")
+                          font = ("Calibri", 14), width = width - 20, tags = "notification_text")
         
         # Make window click-through
         window.attributes("-transparentcolor", "white")
@@ -250,7 +250,7 @@ class ScreenOverlay:
         window.geometry(f"{width}x{height}+0+0")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
-        window.attributes("-alpha", 0.1)  # Set transparency to 10%
+        window.attributes("-alpha", 0.15)  # Set transparency to 15%
         
         # Create canvas for drawing
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
@@ -333,8 +333,8 @@ class ScreenOverlay:
         
         self.is_showing = True
     
-    def hide_outline(self):
-        """Hide the outline"""
+    def hide_notification_and_outline(self):
+        """Hide the notification and outline"""
         if not self.root or not self.windows:
             return
             
@@ -428,15 +428,15 @@ class ScreenOverlay:
         if animation_showing:
             # Slide-in animation (from left to target position)
             # Calculate the distance to move in this step
-            distance_to_target = self.notification_target_x - self.notification_current_x
+            distance_to_target = self.notification_target_pos - self.notification_current_x
             step_size = max(1, distance_to_target // 5)  # Move faster at the beginning, slower at the end
             
             # Update position
             self.notification_current_x += step_size
             
             # If we've reached or passed the target, set to target position
-            if self.notification_current_x >= self.notification_target_x:
-                self.notification_current_x = self.notification_target_x
+            if self.notification_current_x >= self.notification_target_pos:
+                self.notification_current_x = self.notification_target_pos
                 self.notification_animation_in_progress = False
         else:
             # Slide-out animation (from current position to off-screen left)
@@ -457,7 +457,7 @@ class ScreenOverlay:
                 return
         
         # Update window position
-        self.notification_window.geometry(f"+{self.notification_current_x}+11")
+        self.notification_window.geometry(f"+{self.notification_current_x}+{self.notification_target_pos}")
         
         # Schedule next animation step if not done
         if self.notification_animation_in_progress and self.root:
@@ -481,7 +481,7 @@ class ScreenOverlay:
         if self.green_feedback_active:
             if current_time - self.green_start_time >= self.green_duration:
                 # Green feedback duration is over, hide the outline
-                self.hide_outline()
+                self.hide_notification_and_outline()
                 self.green_feedback_active = False
                 # Clear the message
                 self.message_text = ""
@@ -500,10 +500,10 @@ class ScreenOverlay:
             # Check if this habit was previously detected for 3+ seconds
             if current_time - self.habit_status['nail_biting']['start_time'] >= self.detection_threshold:
                 any_habit_active = True
-                messages.append("Nail Biting Detected!")
+                messages.append("Nail Biting Detected")
             # If outline is already showing, display message immediately
             elif self.is_showing:
-                immediate_messages.append("Nail Biting Detected!")
+                immediate_messages.append("Nail Biting Detected")
         else:
             self.habit_status['nail_biting']['active'] = False
         
@@ -517,10 +517,10 @@ class ScreenOverlay:
             # Check if this habit was previously detected for 3+ seconds
             if current_time - self.habit_status['hair_pulling']['start_time'] >= self.detection_threshold:
                 any_habit_active = True
-                messages.append("Hair Pulling Detected!")
+                messages.append("Hair Pulling Detected")
             # If outline is already showing, display message immediately
             elif self.is_showing:
-                immediate_messages.append("Hair Pulling Detected!")
+                immediate_messages.append("Hair Pulling Detected")
         else:
             self.habit_status['hair_pulling']['active'] = False
         
@@ -534,10 +534,10 @@ class ScreenOverlay:
             # Check if this habit was previously detected for 3+ seconds
             if current_time - self.habit_status['slouching']['start_time'] >= self.detection_threshold:
                 any_habit_active = True
-                messages.append("Slouching Detected!")
+                messages.append("Slouching Detected")
             # If outline is already showing, display message immediately
             elif self.is_showing:
-                immediate_messages.append("Slouching Detected!")
+                immediate_messages.append("Slouching Detected")
         else:
             self.habit_status['slouching']['active'] = False
         
@@ -577,20 +577,19 @@ class ScreenOverlay:
             if any_habit_detected and self.is_showing:
                 self.last_detection_time = current_time
             # Otherwise, check if we should show green feedback or hide the outline
-            elif not any_habit_detected and current_time - self.last_detection_time >= self.clear_threshold:
-                if self.is_showing:
-                    # Also hide the tint if it's showing
-                    if self.is_tinted:
-                        self.hide_tint()
-                    # Only show green outline for positive feedback if there was a previous color (i.e. the app was not just initialized)
-                    if self.current_color:
-                        self.show_outline("green2")
-                    self.green_feedback_active = True
-                    self.green_start_time = current_time
-                    # Don't show notification for green feedback
-                    if self.notification_window and self.notification_visible:
-                        self.notification_window.withdraw()
-                        self.notification_visible = False
+            elif self.is_showing and not any_habit_detected and current_time - self.last_detection_time >= self.clear_threshold:
+                # Also hide the tint if it's showing
+                if self.is_tinted:
+                    self.hide_tint()
+                # Only show green outline for positive feedback if there was a previous color (i.e. the app was not just initialized)
+                if self.current_color:
+                    self.show_outline("green2")
+                self.green_feedback_active = True
+                self.green_start_time = current_time
+                # Don't show notification for green feedback
+                if self.notification_window and self.notification_visible:
+                    self.notification_window.withdraw()
+                    self.notification_visible = False
     
     def cleanup(self):
         """Clean up resources"""
