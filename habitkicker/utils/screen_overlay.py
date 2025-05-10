@@ -10,7 +10,7 @@ import pygame.mixer
 import os
 
 class ScreenOverlay:
-    def __init__(self, thickness = 10, alpha = 1):
+    def __init__(self, thickness = 10):
         """Initialize the screen outline overlay
         
         Args:
@@ -18,8 +18,7 @@ class ScreenOverlay:
             alpha: Transparency of the outline (0-1, where 1 is opaque)
         """
         self.thickness = thickness
-        self.alpha = alpha
-        self.current_alpha = alpha  # Tracks current transparency
+        self.current_alpha = 0  # Tracks current transparency
         self.root = None
         self.windows = []
         self.current_color = None
@@ -155,7 +154,7 @@ class ScreenOverlay:
         window.geometry(f"{width}x{height}+{x}+{y}")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
-        window.attributes("-alpha", self.alpha)  # Set transparency
+        window.attributes("-alpha", 0)  # Set transparency
         
         # Create canvas for drawing
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
@@ -164,7 +163,7 @@ class ScreenOverlay:
         # Make window click-through
         window.attributes("-transparentcolor", "white")
         window.config(bg = "white")
-        self._setClickThrough(canvas.winfo_id())
+        self._set_click_through(canvas.winfo_id())
         
         return window
     
@@ -182,7 +181,7 @@ class ScreenOverlay:
         window.geometry(f"{width}x{height}+{x}+{y}")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
-        window.attributes("-alpha", self.alpha)  # Set transparency
+        window.attributes("-alpha", 0)  # Set transparency
         
         # Make window transparent
         window.attributes("-transparentcolor", "black")
@@ -208,7 +207,7 @@ class ScreenOverlay:
         window.geometry(f"{width}x{height}+{self.notification_start_x}+{y}")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
-        window.attributes("-alpha", 0.8)  # Set transparency
+        window.attributes("-alpha", 0.9)  # Set transparency
         
         # Create canvas for drawing
         canvas = Canvas(window, highlightthickness = 0, width = width, height = height)
@@ -231,7 +230,7 @@ class ScreenOverlay:
         # Make window click-through
         window.attributes("-transparentcolor", "white")
         window.config(bg = "white")
-        self._setClickThrough(canvas.winfo_id())
+        self._set_click_through(canvas.winfo_id())
 
         # Hide the window initially
         window.withdraw()
@@ -259,14 +258,14 @@ class ScreenOverlay:
         # Make window click-through
         window.attributes("-transparentcolor", "white")
         window.config(bg = "white")
-        self._setClickThrough(canvas.winfo_id())
+        self._set_click_through(canvas.winfo_id())
 
         # Hide the window initially
         window.withdraw()
         
         self.tint_window = window
     
-    def _setClickThrough(self, hwnd):
+    def _set_click_through(self, hwnd):
         try:
             styles = GetWindowLong(hwnd, GWL_EXSTYLE)
             styles = WS_EX_LAYERED | WS_EX_TRANSPARENT
@@ -292,8 +291,6 @@ class ScreenOverlay:
             
         # Make sure windows are visible even if transparent
         if not self.is_showing:
-            for window in self.windows[:-1]:  # Skip message window
-                window.deiconify()
             self.is_showing = True
 
     def show_outline(self, color):
