@@ -7,10 +7,10 @@ import json
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QSlider, QLabel, QCheckBox, QFrame, QSizePolicy,
-    QProgressBar
+    QProgressBar, QSystemTrayIcon, QMenu
 )
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QFont, QPixmap, QImage
+from PyQt6.QtGui import QFont, QPixmap, QImage, QIcon, QAction
 import qdarkstyle
 from camera import Camera
 import cv2
@@ -24,8 +24,27 @@ class HabitKickerGUI(QMainWindow):
 
         super().__init__()
         
-        # Set window flag to stay on top
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        # Set window flag to stay on top and hide from taskbar
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+
+        # Create system tray icon
+        self.tray_icon = QSystemTrayIcon(self)
+        icon = QIcon(str(project_root / "HabitKicker.ico"))
+        self.tray_icon.setIcon(icon)
+        
+        # Create tray menu
+        tray_menu = QMenu()
+        show_action = QAction("Show", self)
+        quit_action = QAction("Exit", self)
+        show_action.triggered.connect(self.show)
+        quit_action.triggered.connect(self.quit_application)
+        tray_menu.addAction(show_action)
+        tray_menu.addAction(quit_action)
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
+        
+        # Handle tray icon clicks
+        self.tray_icon.activated.connect(self.tray_icon_clicked)
 
         # Default settings
         self.default_settings = {
@@ -976,12 +995,14 @@ class HabitKickerGUI(QMainWindow):
         except Exception as e:
             print(f"Error stopping HabitKicker: {e}")
             
-    def closeWindow(self, event):
-        """Handle window close event"""
-        # Stop the application when closing the window
-        if self.application_running:
-            self.stop_application()
-        event.accept()
+    def closeEvent(self, event):
+        """Override close event to minimize to tray instead of closing"""
+        if self.tray_icon.isVisible():
+            self.hide()
+            event.ignore()
+        else:
+            self.quit_application()
+            event.accept()
 
     def resizeWindow(self, event):
         """Handle window resize events"""
@@ -1040,9 +1061,24 @@ class HabitKickerGUI(QMainWindow):
             # Pass other key events to parent class
             super().keyPressEvent(event)
 
+    def quit_application(self):
+        """Quit the application"""
+        if self.application_running:
+            self.stop_application()
+        QApplication.quit()
+
+    def tray_icon_clicked(self, reason):
+        """Handle tray icon clicks"""
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            if self.isVisible():
+                self.hide()
+            else:
+                self.show()
+
 def main():
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt6())
+    app.setQuitOnLastWindowClosed(False)  # Keep running when window is closed
     window = HabitKickerGUI()
     window.show()
     sys.exit(app.exec())
