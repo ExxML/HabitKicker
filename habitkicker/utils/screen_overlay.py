@@ -86,7 +86,8 @@ class ScreenOverlay:
         self._create_outline_windows(screen_width, screen_height)
         
         # Initialize audio
-        sound_path = os.path.join("sounds", "beep.wav")
+        base_dir = os.getcwd()
+        sound_path = os.path.join(base_dir, "sounds", "beep.wav")
         if os.path.exists(sound_path):
             self.initialize_audio(sound_path)
         else:

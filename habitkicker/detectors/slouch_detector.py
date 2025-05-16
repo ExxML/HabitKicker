@@ -5,7 +5,6 @@ import cv2
 import time
 import os
 import pickle
-from pathlib import Path
 
 class SlouchDetector:
     def __init__(self, threshold_percentage):
@@ -22,10 +21,8 @@ class SlouchDetector:
         self.sample_interval = 0.1  # Collect samples every 100 ms
         
         # Path for saving calibration data
-        # Get the project root directory (assuming we're in habitkicker/detectors)
-        project_root = Path(__file__).parent.parent.parent
-        self.calibration_dir = project_root / "data"
-        self.calibration_file = self.calibration_dir / "posture_calibration.pkl"
+        self.base_dir = os.getcwd()
+        self.calibration_file = os.path.join(self.base_dir, "data", "posture_calibration.pkl")
         
         # Performance optimization: cache for calculations
         self.last_slouch_calculation_time = 0
@@ -331,9 +328,6 @@ class SlouchDetector:
             return False
             
         try:
-            # Create directory if it doesn't exist
-            os.makedirs(self.calibration_dir, exist_ok=True)
-            
             # Save calibration data
             with open(self.calibration_file, 'wb') as f:
                 pickle.dump(self.calibration_landmarks, f)
@@ -346,7 +340,7 @@ class SlouchDetector:
     
     def load_calibration(self):
         """Load calibration data from a file"""
-        if not self.calibration_file.exists():
+        if not self.calibration_file:
             print("No calibration file found")
             return False
             

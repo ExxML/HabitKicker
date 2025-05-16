@@ -14,13 +14,15 @@ from PyQt6.QtGui import QFont, QPixmap, QImage, QIcon, QAction
 import qdarkstyle
 from camera import Camera
 import cv2
-from pathlib import Path
 
 class HabitKickerGUI(QMainWindow):
     def __init__(self):
 
-        project_root = Path(__file__).parent.parent
-        self.calibration_dir = project_root / "data"
+        self.base_dir = os.getcwd()
+        self.data_dir = os.path.join(self.base_dir, "data")
+        self.sounds_dir = os.path.join(self.base_dir, "sounds")
+        os.makedirs(self.data_dir, exist_ok=True)
+        os.makedirs(self.sounds_dir, exist_ok=True)
 
         super().__init__()
         
@@ -29,7 +31,7 @@ class HabitKickerGUI(QMainWindow):
 
         # Create system tray icon
         self.tray_icon = QSystemTrayIcon(self)
-        icon = QIcon(str(project_root / "HabitKicker.ico"))
+        icon = QIcon(os.path.join(self.base_dir, "HabitKicker.ico"))
         self.tray_icon.setIcon(icon)
         
         # Create tray menu
@@ -597,7 +599,7 @@ class HabitKickerGUI(QMainWindow):
     
     def load_settings(self):
         """Load settings from file"""
-        settings_path = os.path.join(self.calibration_dir, "habitkicker_settings.json")
+        settings_path = os.path.join(self.data_dir, "habitkicker_settings.json")
         try:
             if os.path.exists(settings_path):
                 with open(settings_path, 'r') as f:
@@ -609,7 +611,7 @@ class HabitKickerGUI(QMainWindow):
     
     def save_settings(self):
         """Save settings to file"""
-        settings_path = os.path.join(self.calibration_dir, "habitkicker_settings.json")
+        settings_path = os.path.join(self.data_dir, "habitkicker_settings.json")
         try:
             with open(settings_path, 'w') as f:
                 json.dump(self.settings, f)
