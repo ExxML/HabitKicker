@@ -1,6 +1,6 @@
 .venv
-data
 **/__pycache__/
+posture_calibration.pkl
 main.build
 main.dist
 main.onefile-build
