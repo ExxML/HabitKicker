@@ -929,14 +929,14 @@ class HabitKickerGUI(QMainWindow):
                 # Start camera processing
                 self.camera.start_camera_no_window()
                 
-                # Check calibration status
-                self.check_calibration_status()
-                
                 # Wait until camera is fully initialized
                 while not self.camera.cap:
                     time.sleep(0.1)
                 # Additional delay to ensure full initialization of alert windows
-                time.sleep(0.5)
+                time.sleep(1.5)
+
+                # Check calibration status
+                self.check_calibration_status()
 
                 # Configure detection settings
                 self.camera.enable_nail_detection = self.settings["nail_detection"]
