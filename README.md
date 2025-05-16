@@ -16,7 +16,7 @@ A computer vision application to detect and break unwanted habits like nail-biti
 
 ## Requirements
 
-- Python 3.10.11
+- Python 3.12.10
 - Dependencies:
   - OpenCV (opencv-python) == 4.11.0.86
   - MediaPipe == 0.10.14
