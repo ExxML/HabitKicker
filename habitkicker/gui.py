@@ -24,8 +24,8 @@ class HabitKickerGUI(QMainWindow):
 
         super().__init__()
         
-        # Set window flag to stay on top and hide from taskbar
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        # Set window flag to stay on top, hide from taskbar, and remove title bar
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
 
         # Create system tray icon
         self.tray_icon = QSystemTrayIcon(self)
@@ -34,11 +34,8 @@ class HabitKickerGUI(QMainWindow):
         
         # Create tray menu
         tray_menu = QMenu()
-        show_action = QAction("Show", self)
         quit_action = QAction("Exit", self)
-        show_action.triggered.connect(self.show)
         quit_action.triggered.connect(self.quit_application)
-        tray_menu.addAction(show_action)
         tray_menu.addAction(quit_action)
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
