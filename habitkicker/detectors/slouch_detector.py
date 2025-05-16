@@ -255,10 +255,10 @@ class SlouchDetector:
         dist_ratio = curr_nose_neck_dist / cal_nose_neck_dist if cal_nose_neck_dist > 0 else 1
         
         # Combine metrics to calculate slouch percentage
-        # Weight the metrics: shoulder position (60%), angle change (30%), distance ratio (10%)
-        shoulder_factor = 0.6
-        angle_factor = 0.3
-        distance_factor = 0.1
+        # Weight the metrics: shoulder position, angle change, distance ratio
+        shoulder_factor = 0.8 # Vertical position of shoulders relative to calibrated position
+        angle_factor =  0.1 # Head tilt angle
+        distance_factor = 0.4 # Distance between nose and neck
         
         # Calculate reference distance for shoulder movement percentage
         ref_distance = abs(self.calibration_landmarks['nose'][1] - 
