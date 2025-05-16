@@ -71,8 +71,12 @@ pip install nuitka
 
 2. Generate .exe:
 ```bash
-python -m nuitka --onefile --windows-icon-from-ico="data/HabitKicker.ico" --windows-console-mode=disable --enable-plugin=pyqt6 --enable-plugin=tk-inter --include-data-dir=".venv\Lib\site-packages\mediapipe\modules=mediapipe/modules" --include-data-dir="data=data" --include-data-dir="sounds=sounds" habitkicker\main.py
+python -m nuitka --standalone --windows-icon-from-ico="data/HabitKicker.ico" --windows-console-mode=disable --enable-plugin=pyqt6 --enable-plugin=tk-inter --include-data-dir=".venv\Lib\site-packages\mediapipe\modules=mediapipe/modules" --include-data-dir="data=data" --include-data-dir="sounds=sounds" habitkicker\main.py
 ```
+
+3. [Optional] Auto-run on startup:
+- Create a shortcut for `main.exe`
+- Move the shortcut to the Startup folder (Press `Win + R`, then type `shell:startup`)
 
 ## License
 
