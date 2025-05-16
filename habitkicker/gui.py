@@ -78,7 +78,7 @@ class HabitKickerGUI(QMainWindow):
         # Timer for updating camera feed
         self.camera_timer = QTimer()
         self.camera_timer.timeout.connect(self.update_camera_feed)
-        self.camera_timer.start(16)  # ~60 fps for smoother display
+        self.camera_timer.start(33)  # Max ~30 fps
 
         # Automatically start the application
         self.start_application()
@@ -231,7 +231,7 @@ class HabitKickerGUI(QMainWindow):
         delay_label = QLabel("Camera FPS:")
         self.delay_label = delay_label  # Store reference to label
         self.delay_slider = QSlider(Qt.Orientation.Horizontal)
-        self.delay_slider.setRange(1, 60)  # 1 to 60 FPS
+        self.delay_slider.setRange(1, 30)  # 1 to 30 FPS
         initial_fps = self.settings["camera_fps"]
         self.delay_slider.setValue(initial_fps)
         self.delay_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
@@ -913,10 +913,6 @@ class HabitKickerGUI(QMainWindow):
                 self.outline_checkbox.setChecked(self.settings["show_screen_outline"])
                 self.tint_checkbox.setChecked(self.settings["show_red_tint"])
 
-                self.toggle_notifications(self.settings["show_notifications"] * 2)
-                self.toggle_screen_outline(self.settings["show_screen_outline"] * 2)
-                self.toggle_tint(self.settings["show_red_tint"] * 2)
-
                 if self.settings["show_red_tint"]:
                     self.volume_slider.setEnabled(True)
                     self.volume_value_label.setEnabled(True)
@@ -926,6 +922,10 @@ class HabitKickerGUI(QMainWindow):
                     self.volume_value_label.setEnabled(False)
                     self.volume_label.setEnabled(False)
 
+                self.toggle_notifications(self.settings["show_notifications"] * 2)
+                self.toggle_screen_outline(self.settings["show_screen_outline"] * 2)
+                self.toggle_tint(self.settings["show_red_tint"] * 2)
+
                 # Start camera processing
                 self.camera.start_camera_no_window()
                 
@@ -933,7 +933,7 @@ class HabitKickerGUI(QMainWindow):
                 while not self.camera.cap:
                     time.sleep(0.1)
                 # Additional delay to ensure full initialization of alert windows
-                time.sleep(1.5)
+                time.sleep(-self.settings["camera_fps"]/30 + 1.5)
 
                 # Check calibration status
                 self.check_calibration_status()
