@@ -31,7 +31,7 @@ class HabitKickerGUI(QMainWindow):
 
         # Create system tray icon
         self.tray_icon = QSystemTrayIcon(self)
-        icon = QIcon(os.path.join(self.base_dir, "HabitKicker.ico"))
+        icon = QIcon(os.path.join(self.data_dir, "HabitKicker.ico"))
         self.tray_icon.setIcon(icon)
         
         # Create tray menu
