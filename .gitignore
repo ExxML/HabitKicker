@@ -4,5 +4,4 @@ habitkicker_settings.json
 posture_calibration.pkl
 main.build
 main.dist
-main.onefile-build
 TODO.md
