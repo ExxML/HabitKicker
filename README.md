@@ -71,7 +71,7 @@ pip install nuitka
 
 2. Generate .exe:
 ```bash
-python -m nuitka --onefile --windows-console-mode=disable --windows-icon-from-ico=HabitKicker.ico --enable-plugin=tk-inter habitkicker\main.py
+python -m nuitka --onefile --windows-icon-from-ico="data/HabitKicker.ico" --enable-plugin=pyqt6 --enable-plugin=tk-inter --include-data-dir=".venv\Lib\site-packages\mediapipe\modules=mediapipe/modules" --include-data-dir="data=data" --include-data-dir="sounds=sounds" habitkicker\main.py
 ```
 
 ## License
