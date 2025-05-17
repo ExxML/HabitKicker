@@ -19,13 +19,25 @@ class HabitDetector:
                     return True, mouth_pos
         return False, None
 
-    def check_hair_pulling(self, thumb_pos, finger_pos, forehead_pos):
+    def check_hair_pulling(self, thumb_pos, finger_pos, forehead_pos, forehead_idx):
         """Check if thumb and another finger are close to a forehead landmark"""
+        # Check if either thumb or finger is above forehead
+        if not (thumb_pos[1] < forehead_pos[1] or finger_pos[1] < forehead_pos[1]):
+            return False
+            
+        # Check if forehead landmark is on left/right side and fingers are to the left/right respectively (avoids false positives)
+        left_forehead_landmarks = self.config.FOREHEAD_LANDMARKS[0:7]
+        right_forehead_landmarks = self.config.FOREHEAD_LANDMARKS[7:14]
+        if forehead_idx in left_forehead_landmarks and not (thumb_pos[0] < forehead_pos[0] and finger_pos[0] < forehead_pos[0]):
+            return False
+        elif forehead_idx in right_forehead_landmarks and not (thumb_pos[0] > forehead_pos[0] and finger_pos[0] > forehead_pos[0]):
+            return False
+            
         thumb_to_forehead = np.linalg.norm(np.array(thumb_pos) - np.array(forehead_pos))
         if thumb_to_forehead < self.HAIR_PULLING_THRESHOLD:
             finger_to_forehead = np.linalg.norm(np.array(finger_pos) - np.array(forehead_pos))
             finger_to_thumb = np.linalg.norm(np.array(finger_pos) - np.array(thumb_pos))
             
             return (finger_to_forehead < self.HAIR_PULLING_THRESHOLD and 
-                   finger_to_thumb < self.HAIR_PULLING_THRESHOLD)
+                   finger_to_thumb < 40)
         return False 

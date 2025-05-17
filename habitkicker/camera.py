@@ -191,7 +191,7 @@ class Camera:
                 forehead_pos = face_landmarks[forehead_idx]
                 
                 for finger_pos in other_fingertips.values():
-                    if self.habit_detector.check_hair_pulling(thumb_pos, finger_pos, forehead_pos):
+                    if self.habit_detector.check_hair_pulling(thumb_pos, finger_pos, forehead_pos, forehead_idx):
                         self._draw_hair_pulling_triangle(frame, thumb_pos, finger_pos, forehead_pos)
                         is_pulling = True
         return is_pulling
