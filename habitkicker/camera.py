@@ -10,7 +10,7 @@ from utils.mediapipe_handler import MediapipeHandler
 from utils.screen_overlay import ScreenOverlay
 
 class Camera:
-    def __init__(self, max_nail_pulling_distance = 40, max_hair_pulling_distance = 50, slouch_threshold = 15):
+    def __init__(self, max_nail_pulling_distance, max_hair_pulling_distance, slouch_threshold):
         self.mp_handler = MediapipeHandler()
         self.habit_detector = HabitDetector(max_nail_pulling_distance, max_hair_pulling_distance)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
