@@ -48,7 +48,7 @@ class HabitKickerGUI(QMainWindow):
         # Default settings
         self.default_settings = {
             "nail_distance": 40,
-            "hair_distance": 50,
+            "hair_distance": 100,
             "nail_detection": True,
             "hair_detection": True,
             "slouch_detection": True,
@@ -889,8 +889,9 @@ class HabitKickerGUI(QMainWindow):
                 hair_distance = self.settings["hair_distance"]
                 
                 self.camera = Camera(
-                    max_nail_pulling_distance=nail_distance,
-                    max_hair_pulling_distance=hair_distance
+                    max_nail_pulling_distance = nail_distance,
+                    max_hair_pulling_distance = hair_distance,
+                    slouch_threshold = 15
                 )
                 
                 # Set camera processing delay
