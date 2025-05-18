@@ -80,6 +80,7 @@ python -m nuitka --standalone --windows-icon-from-ico="data/HabitKicker.ico" --w
 
 ### Shortcuts
 
+- Click tray icon to toggle window visibility
 - `Ctrl + C` to calibrate posture
 - `Ctrl + T` to toggle camera feed
 - `Ctrl + X` to hide window
