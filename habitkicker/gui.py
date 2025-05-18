@@ -33,6 +33,7 @@ class HabitKickerGUI(QMainWindow):
         self.tray_icon = QSystemTrayIcon(self)
         icon = QIcon(os.path.join(self.data_dir, "HabitKicker.ico"))
         self.tray_icon.setIcon(icon)
+        self.tray_icon.setToolTip("HabitKicker")
         
         # Create tray menu
         tray_menu = QMenu()
@@ -889,7 +890,8 @@ class HabitKickerGUI(QMainWindow):
                 self.camera = Camera(
                     max_nail_pulling_distance = nail_distance,
                     max_hair_pulling_distance = hair_distance,
-                    slouch_threshold = 15
+                    slouch_threshold = 15,
+                    gui_window = self
                 )
                 
                 # Set camera processing delay
@@ -1059,6 +1061,8 @@ class HabitKickerGUI(QMainWindow):
             self.calibrate_posture()
         elif event.modifiers() and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_T:
             self.toggle_panel()
+        elif event.modifiers() and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_X:
+            self.hide()
         else:
             # Pass other key events to parent class
             super().keyPressEvent(event)
@@ -1076,6 +1080,11 @@ class HabitKickerGUI(QMainWindow):
                 self.hide()
             else:
                 self.show()
+
+    def ensure_window_on_top(self):
+        """Ensure the main window stays on top."""
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
+        self.show()
 
 def main():
     app = QApplication(sys.argv)

@@ -3,6 +3,7 @@
 import cv2
 import time
 import threading
+from PyQt6.QtCore import QTimer
 from config.landmark_config import LandmarkConfig
 from detectors.habit_detector import HabitDetector
 from detectors.slouch_detector import SlouchDetector
@@ -10,7 +11,7 @@ from utils.mediapipe_handler import MediapipeHandler
 from utils.screen_overlay import ScreenOverlay
 
 class Camera:
-    def __init__(self, max_nail_pulling_distance, max_hair_pulling_distance, slouch_threshold):
+    def __init__(self, max_nail_pulling_distance, max_hair_pulling_distance, slouch_threshold, gui_window):
         self.mp_handler = MediapipeHandler()
         self.habit_detector = HabitDetector(max_nail_pulling_distance, max_hair_pulling_distance)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
@@ -51,6 +52,9 @@ class Camera:
         self.running = False
         self.thread = None
 
+        # Reference to GUI window
+        self.gui_window = gui_window
+
     def _initialize_camera(self):
         """Initialize camera with specific settings"""
         cap = cv2.VideoCapture(0)
@@ -59,6 +63,8 @@ class Camera:
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
         cap.set(cv2.CAP_PROP_BRIGHTNESS, 150)
         cap.set(cv2.CAP_PROP_CONTRAST, 150)
+        # Ensure the GUI window stays on top
+        QTimer.singleShot(0, self.gui_window.ensure_window_on_top)
         return cap
 
     def calculate_landmark_position(self, landmark, image_shape):
