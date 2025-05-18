@@ -21,7 +21,6 @@ A computer vision application to detect and break unwanted habits like nail-biti
   - OpenCV (opencv-python) == 4.11.0.86
   - MediaPipe == 0.10.14
   - PyQt6 == 6.8.1
-  - QDarkStyle == 3.2.3
   - Pygame == 2.6.1
 - Hardware:
   - Minimum 480p webcam

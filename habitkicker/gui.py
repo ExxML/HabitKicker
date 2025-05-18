@@ -1,6 +1,5 @@
 """PyQt6 GUI for the HabitKicker application"""
 
-import sys
 import os
 import time
 import json
@@ -11,7 +10,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QFont, QPixmap, QImage, QIcon, QAction
-import qdarkstyle
 from camera import Camera
 import cv2
 
@@ -958,6 +956,7 @@ class HabitKickerGUI(QMainWindow):
 
                 # Automatically select window
                 QTimer.singleShot(0, lambda: (self.activateWindow(), self.raise_(), self.setFocus()))
+                self.ensure_window_on_top()
 
                 print("HabitKicker initialized successfully")
             else:
@@ -1097,3 +1096,5 @@ class HabitKickerGUI(QMainWindow):
         """Ensure the main window stays on top."""
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.show()
+        self.raise_()
+        self.activateWindow()
