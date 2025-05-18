@@ -956,6 +956,9 @@ class HabitKickerGUI(QMainWindow):
                 # Open panel on startup
                 self.toggle_panel()
 
+                # Automatically select window
+                QTimer.singleShot(0, lambda: (self.activateWindow(), self.raise_(), self.setFocus()))
+
                 print("HabitKicker initialized successfully")
             else:
                 print("HabitKicker is already running")
@@ -1094,14 +1097,3 @@ class HabitKickerGUI(QMainWindow):
         """Ensure the main window stays on top."""
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.show()
-
-def main():
-    app = QApplication(sys.argv)
-    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt6())
-    app.setQuitOnLastWindowClosed(False)  # Keep running when window is closed
-    window = HabitKickerGUI()
-    window.show()
-    sys.exit(app.exec())
-
-if __name__ == "__main__":
-    main()
