@@ -1055,8 +1055,9 @@ class HabitKickerGUI(QMainWindow):
         """Handle key press events"""
         # Check if Ctrl+C is pressed
         if event.modifiers() and self.settings["slouch_detection"] and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_C:
-            # Call calibrate_posture method
             self.calibrate_posture()
+        elif event.modifiers() and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_T:
+            self.toggle_panel()
         else:
             # Pass other key events to parent class
             super().keyPressEvent(event)

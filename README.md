@@ -11,7 +11,7 @@ A computer vision application to detect and break unwanted habits like nail-biti
   - Hair pulling distance (distance from finger to hair)
 - User-friendly GUI with dark mode
 - Configurable notifications and alerts
-- Live camera feed with visual feedback
+- Live camera feed with visual feedback (press `Ctrl+T` to open/close)
   - Modifiable FPS **(⭐2-5 FPS is recommended for most systems to conserve resources)**
 
 ## Requirements
@@ -76,7 +76,7 @@ python -m nuitka --standalone --windows-icon-from-ico="data/HabitKicker.ico" --w
 
 3. [Optional] Auto-run on startup:
 - Create a shortcut for `main.exe`
-- Move the shortcut to the Startup folder (Press `Win + R`, then type `shell:startup`)
+- Move the shortcut to the Startup folder (Press `Win+R`, then type `shell:startup`)
 
 ## License
 
