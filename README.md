@@ -11,7 +11,7 @@ A computer vision application to detect and break unwanted habits like nail-biti
   - Hair pulling distance (distance from finger to hair)
 - User-friendly GUI with dark mode
 - Configurable notifications and alerts
-- Live camera feed with visual feedback (press `Ctrl+T` to open/close)
+- Live camera feed with visual feedback
   - Modifiable FPS **(⭐2-5 FPS is recommended for most systems to conserve resources)**
 
 ## Requirements
@@ -54,14 +54,6 @@ pip install -r requirements.txt
 python habitkicker\main.py
 ```
 
-## Getting Started
-
-1. Launch the application
-2. Use the "Calibrate Posture" button (or press `Ctrl+C`) to set your baseline posture
-3. Adjust the detection settings according to your preferences
-4. Enable/disable notifications and alerts as needed
-5. The application will monitor your habits and provide real-time feedback
-
 ## Compile to .exe Using Nuitka
 
 1. Install Nuitka:
@@ -76,7 +68,21 @@ python -m nuitka --standalone --windows-icon-from-ico="data/HabitKicker.ico" --w
 
 3. [Optional] Auto-run on startup:
 - Create a shortcut for `main.exe`
-- Move the shortcut to the Startup folder (Press `Win+R`, then type `shell:startup`)
+- Move the shortcut to the Startup folder (Press `Win + R`, then type `shell:startup`)
+
+## Getting Started
+
+1. Launch the application
+2. Use the "Calibrate Posture" button to set your baseline posture
+3. Adjust the detection settings according to your preferences
+4. Enable/disable notifications and alerts as needed
+5. The application will monitor your habits and provide real-time feedback
+
+### Shortcuts
+
+- `Ctrl + C` to calibrate posture
+- `Ctrl + T` to toggle camera feed
+- `Ctrl + X` to hide window
 
 ## License
 
