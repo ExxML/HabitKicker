@@ -350,9 +350,6 @@ class HabitKickerGUI(QMainWindow):
         nail_toggle_layout.addWidget(nail_toggle_label)
         nail_toggle_layout.addWidget(self.nail_toggle)
         toggle_layout.addLayout(nail_toggle_layout)
-        nail_detection = self.settings["nail_detection"]
-        self.nail_slider.setEnabled(nail_detection)
-        self.nail_value_label.setEnabled(nail_detection)
         
         # Hair detection toggle
         hair_toggle_layout = QHBoxLayout()
@@ -363,9 +360,6 @@ class HabitKickerGUI(QMainWindow):
         hair_toggle_layout.addWidget(hair_toggle_label)
         hair_toggle_layout.addWidget(self.hair_toggle)
         toggle_layout.addLayout(hair_toggle_layout)
-        hair_detection = self.settings["hair_detection"]
-        self.hair_slider.setEnabled(hair_detection)
-        self.hair_value_label.setEnabled(hair_detection)
 
         # Slouch detection toggle
         slouch_toggle_layout = QHBoxLayout()
@@ -376,8 +370,6 @@ class HabitKickerGUI(QMainWindow):
         slouch_toggle_layout.addWidget(slouch_toggle_label)
         slouch_toggle_layout.addWidget(self.slouch_toggle)
         toggle_layout.addLayout(slouch_toggle_layout)
-        slouch_detection = self.settings["slouch_detection"]
-        self.calibrate_button.setEnabled(slouch_detection)
 
         # Add stretch at the end to keep toggles left-aligned
         toggle_layout.addStretch()
@@ -787,6 +779,10 @@ class HabitKickerGUI(QMainWindow):
         """Calibrate posture using the camera"""
         if hasattr(self, 'camera') and self.camera is not None:
             try:
+                # Temporarily enable slouch detection
+                self.temp_enable_slouch_detection = self.camera.enable_slouch_detection
+                self.camera.enable_slouch_detection = True
+
                 # Open the slide-out panel if it's not already open
                 self.temp_panel_expanded = self.panel_expanded
                 if not self.panel_expanded:
@@ -843,6 +839,9 @@ class HabitKickerGUI(QMainWindow):
                 if self.panel_expanded and not self.temp_panel_expanded:
                     QTimer.singleShot(1000, self.toggle_panel)
                 
+                # Restore enable slouch detection value
+                self.camera.enable_slouch_detection = self.temp_enable_slouch_detection
+
                 # Stop the timer if we were using one
                 if hasattr(self, 'calibration_timer') and self.calibration_timer.isActive():
                     self.calibration_timer.stop()
@@ -923,6 +922,15 @@ class HabitKickerGUI(QMainWindow):
                     self.volume_value_label.setEnabled(False)
                     self.volume_label.setEnabled(False)
 
+                self.nail_toggle.setEnabled(True)
+                self.hair_toggle.setEnabled(True)
+                self.slouch_toggle.setEnabled(True)
+                self.nail_slider.setEnabled(True)
+                self.nail_value_label.setEnabled(True)
+                self.hair_slider.setEnabled(True)
+                self.hair_value_label.setEnabled(True)
+                self.calibrate_button.setEnabled(True)
+
                 self.toggle_notifications(self.settings["show_notifications"] * 2)
                 self.toggle_screen_outline(self.settings["show_screen_outline"] * 2)
                 self.toggle_tint(self.settings["show_red_tint"] * 2)
@@ -936,9 +944,6 @@ class HabitKickerGUI(QMainWindow):
                 # Additional delay to ensure full initialization of alert windows
                 time.sleep(-self.settings["camera_fps"]/30 + 1.5)
 
-                # Check calibration status
-                self.check_calibration_status()
-
                 # Configure detection settings
                 self.camera.enable_nail_detection = self.settings["nail_detection"]
                 self.camera.enable_hair_detection = self.settings["hair_detection"]
@@ -947,6 +952,10 @@ class HabitKickerGUI(QMainWindow):
                 self.camera.screen_overlay.notification_visible = self.settings["show_notifications"]
                 self.camera.screen_overlay.show_outline_enabled = self.settings["show_screen_outline"]
                 self.camera.screen_overlay.show_red_tint = self.settings["show_red_tint"]
+
+                # Check calibration status
+                self.temp_enable_slouch_detection = self.camera.enable_slouch_detection
+                self.check_calibration_status()
 
                 # Open panel on startup
                 self.toggle_panel()
@@ -988,6 +997,15 @@ class HabitKickerGUI(QMainWindow):
             self.volume_value_label.setEnabled(False)
             self.volume_label.setEnabled(False)
 
+            self.nail_toggle.setEnabled(False)
+            self.hair_toggle.setEnabled(False)
+            self.slouch_toggle.setEnabled(False)
+            self.nail_slider.setEnabled(False)
+            self.nail_value_label.setEnabled(False)
+            self.hair_slider.setEnabled(False)
+            self.hair_value_label.setEnabled(False)
+            self.calibrate_button.setEnabled(False)
+
             # Stop camera and cleanup
             if hasattr(self, 'camera') and self.camera is not None:
                 self.camera.stop_camera()
@@ -1019,9 +1037,6 @@ class HabitKickerGUI(QMainWindow):
         # Update settings
         self.settings["nail_detection"] = enabled
         self.save_settings()
-        # Update nail detection slider state
-        self.nail_slider.setEnabled(enabled)
-        self.nail_value_label.setEnabled(enabled)
         # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
             self.camera.enable_nail_detection = enabled
@@ -1033,9 +1048,6 @@ class HabitKickerGUI(QMainWindow):
         # Update settings
         self.settings["hair_detection"] = enabled
         self.save_settings()
-        # Update hair detection slider state
-        self.hair_slider.setEnabled(enabled)
-        self.hair_value_label.setEnabled(enabled)
         # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
             self.camera.enable_hair_detection = enabled
@@ -1047,8 +1059,6 @@ class HabitKickerGUI(QMainWindow):
         # Update settings
         self.settings["slouch_detection"] = enabled
         self.save_settings()
-        # Update calibration button state
-        self.calibrate_button.setEnabled(enabled)
         # Update camera if running
         if hasattr(self, 'camera') and self.camera is not None:
             self.camera.enable_slouch_detection = enabled
@@ -1057,7 +1067,7 @@ class HabitKickerGUI(QMainWindow):
     def keyPressEvent(self, event):
         """Handle key press events"""
         # Check if Ctrl+C is pressed
-        if event.modifiers() and self.settings["slouch_detection"] and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_C:
+        if event.modifiers() and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_C:
             self.calibrate_posture()
         elif event.modifiers() and Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_T:
             self.toggle_panel()
