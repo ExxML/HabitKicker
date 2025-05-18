@@ -379,9 +379,9 @@ class HabitKickerGUI(QMainWindow):
         # Add restore defaults button
         restore_layout = QHBoxLayout()
         restore_layout.addStretch()
-        restore_button = QPushButton("Restore Default Settings")
-        restore_button.clicked.connect(self.restore_default_detection_settings)
-        restore_layout.addWidget(restore_button)
+        self.restore_button = QPushButton("Restore Default Settings")
+        self.restore_button.clicked.connect(self.restore_default_detection_settings)
+        restore_layout.addWidget(self.restore_button)
         detection_layout.addLayout(restore_layout)
         
         # Connect sliders to update functions
@@ -846,13 +846,12 @@ class HabitKickerGUI(QMainWindow):
                 if hasattr(self, 'calibration_timer') and self.calibration_timer.isActive():
                     self.calibration_timer.stop()
             else:
-                self.calibration_status.setText("Status: Not calibrated")
-                
                 # Update the calibration status message and progress
                 self.update_calibration_status()
                 
                 # If no longer calibrating but not calibrated, something went wrong
                 if not self.camera.is_calibrating:
+                    self.calibration_status.setText("Status: Not calibrated")
                     # Restore the processing delay if calibration failed
                     if hasattr(self.camera, 'stored_processing_delay'):
                         self.camera.processing_delay = self.camera.stored_processing_delay
@@ -904,15 +903,10 @@ class HabitKickerGUI(QMainWindow):
                 while not self.camera.screen_overlay.root or not self.camera.screen_overlay.windows:
                     time.sleep(0.1)
 
-                # Reset settings
+                # Enable all settings
                 self.notification_checkbox.setEnabled(True)
                 self.outline_checkbox.setEnabled(True)
                 self.tint_checkbox.setEnabled(True)
-
-                self.notification_checkbox.setChecked(self.settings["show_notifications"])
-                self.outline_checkbox.setChecked(self.settings["show_screen_outline"])
-                self.tint_checkbox.setChecked(self.settings["show_red_tint"])
-
                 if self.settings["show_red_tint"]:
                     self.volume_slider.setEnabled(True)
                     self.volume_value_label.setEnabled(True)
@@ -930,7 +924,9 @@ class HabitKickerGUI(QMainWindow):
                 self.hair_slider.setEnabled(True)
                 self.hair_value_label.setEnabled(True)
                 self.calibrate_button.setEnabled(True)
+                self.restore_button.setEnabled(True)
 
+                # Restore settings
                 self.toggle_notifications(self.settings["show_notifications"] * 2)
                 self.toggle_screen_outline(self.settings["show_screen_outline"] * 2)
                 self.toggle_tint(self.settings["show_red_tint"] * 2)
@@ -974,6 +970,7 @@ class HabitKickerGUI(QMainWindow):
         try:
             # Update UI
             self.start_button.setText("Start HabitKicker")
+            self.calibration_status.setText("Status: Camera not initialized")
             self.application_running = False
 
             # Disable alerts
@@ -990,6 +987,7 @@ class HabitKickerGUI(QMainWindow):
                 if self.camera.screen_overlay.is_tinted:
                     self.camera.screen_overlay.hide_tint()
 
+            # Disable all settings
             self.notification_checkbox.setEnabled(False)
             self.outline_checkbox.setEnabled(False)
             self.tint_checkbox.setEnabled(False)
@@ -1005,6 +1003,7 @@ class HabitKickerGUI(QMainWindow):
             self.hair_slider.setEnabled(False)
             self.hair_value_label.setEnabled(False)
             self.calibrate_button.setEnabled(False)
+            self.restore_button.setEnabled(False)
 
             # Stop camera and cleanup
             if hasattr(self, 'camera') and self.camera is not None:
