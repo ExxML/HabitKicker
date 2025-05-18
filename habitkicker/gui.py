@@ -787,11 +787,9 @@ class HabitKickerGUI(QMainWindow):
         if hasattr(self, 'camera') and self.camera is not None:
             try:
                 # Open the slide-out panel if it's not already open
+                self.temp_panel_expanded = self.panel_expanded
                 if not self.panel_expanded:
                     self.toggle_panel()
-                
-                # Make sure camera panel content is visible
-                self.camera_panel_content.setVisible(True)
                 
                 # Show calibration status panel
                 self.calibration_status_frame.setVisible(True)
@@ -841,7 +839,7 @@ class HabitKickerGUI(QMainWindow):
                     self.update_calibration_status()
                 
                 # Close the slide-out panel after calibration is complete
-                if self.panel_expanded:
+                if self.panel_expanded and not self.temp_panel_expanded:
                     QTimer.singleShot(1000, self.toggle_panel)
                 
                 # Stop the timer if we were using one
@@ -947,6 +945,9 @@ class HabitKickerGUI(QMainWindow):
                 self.camera.screen_overlay.notification_visible = self.settings["show_notifications"]
                 self.camera.screen_overlay.show_outline_enabled = self.settings["show_screen_outline"]
                 self.camera.screen_overlay.show_red_tint = self.settings["show_red_tint"]
+
+                # Open panel on startup
+                self.toggle_panel()
 
                 print("HabitKicker initialized successfully")
             else:
