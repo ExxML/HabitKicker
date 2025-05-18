@@ -29,7 +29,9 @@ class ScreenOverlay:
             'hair_pulling': {'active': False, 'start_time': 0},
             'slouching': {'active': False, 'start_time': 0}
         }
-        self.detection_threshold = 3.0  # seconds
+        self.nail_detection_threshold = 2.0  # seconds
+        self.hair_detection_threshold = 1.0  # seconds
+        self.slouch_detection_threshold = 3.0  # seconds
         self.clear_threshold = 2.0  # seconds
         self.last_detection_time = 0
         self.message_text = ""
@@ -496,7 +498,7 @@ class ScreenOverlay:
                 self.habit_status['nail_biting']['active'] = True
             
             # Check if this habit was previously detected for 3+ seconds
-            if current_time - self.habit_status['nail_biting']['start_time'] >= self.detection_threshold:
+            if current_time - self.habit_status['nail_biting']['start_time'] >= self.nail_detection_threshold:
                 any_habit_active = True
                 messages.append("Nail Biting Detected")
             # If outline is already showing, display message immediately
@@ -513,7 +515,7 @@ class ScreenOverlay:
                 self.habit_status['hair_pulling']['active'] = True
             
             # Check if this habit was previously detected for 3+ seconds
-            if current_time - self.habit_status['hair_pulling']['start_time'] >= self.detection_threshold:
+            if current_time - self.habit_status['hair_pulling']['start_time'] >= self.hair_detection_threshold:
                 any_habit_active = True
                 messages.append("Hair Pulling Detected")
             # If outline is already showing, display message immediately
@@ -530,7 +532,7 @@ class ScreenOverlay:
                 self.habit_status['slouching']['active'] = True
             
             # Check if this habit was previously detected for 3+ seconds
-            if current_time - self.habit_status['slouching']['start_time'] >= self.detection_threshold:
+            if current_time - self.habit_status['slouching']['start_time'] >= self.slouch_detection_threshold:
                 any_habit_active = True
                 messages.append("Slouching Detected")
             # If outline is already showing, display message immediately
