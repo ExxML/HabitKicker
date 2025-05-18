@@ -308,7 +308,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Nail biting distance slider
         nail_layout = QHBoxLayout()
-        nail_label = QLabel("Max Nail Biting Distance:  ")
+        nail_label = QLabel("Max Nail Distance:")
         self.nail_slider = QSlider(Qt.Orientation.Horizontal)
         self.nail_slider.setRange(0, 100)
         self.nail_slider.setValue(self.settings["nail_distance"])  # Use saved value
@@ -323,9 +323,9 @@ class HabitKickerGUI(QMainWindow):
         
         # Hair pulling distance slider
         hair_layout = QHBoxLayout()
-        hair_label = QLabel("Max Hair Pulling Distance:")
+        hair_label = QLabel("Max Hair Distance:")
         self.hair_slider = QSlider(Qt.Orientation.Horizontal)
-        self.hair_slider.setRange(0, 100)
+        self.hair_slider.setRange(0, 150)
         self.hair_slider.setValue(self.settings["hair_distance"])  # Use saved value
         self.hair_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.hair_slider.setTickInterval(10)
