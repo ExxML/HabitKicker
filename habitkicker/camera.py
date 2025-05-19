@@ -64,7 +64,7 @@ class Camera:
         cap.set(cv2.CAP_PROP_BRIGHTNESS, 150)
         cap.set(cv2.CAP_PROP_CONTRAST, 150)
         # Ensure the GUI window stays on top
-        QTimer.singleShot(0, self.gui_window.ensure_window_on_top)
+        QTimer.singleShot(0, self.gui_window.focus_window)
         return cap
 
     def calculate_landmark_position(self, landmark, image_shape):

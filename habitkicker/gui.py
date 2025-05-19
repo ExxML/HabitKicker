@@ -955,8 +955,7 @@ class HabitKickerGUI(QMainWindow):
                 self.toggle_panel()
 
                 # Automatically select window
-                QTimer.singleShot(0, lambda: (self.activateWindow(), self.raise_(), self.setFocus()))
-                self.ensure_window_on_top()
+                self.focus_window()
 
                 print("HabitKicker initialized successfully")
             else:
@@ -1090,11 +1089,12 @@ class HabitKickerGUI(QMainWindow):
             if self.isVisible():
                 self.hide()
             else:
-                self.show()
+                self.focus_window()
 
-    def ensure_window_on_top(self):
+    def focus_window(self):
         """Ensure the main window stays on top."""
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
+        QTimer.singleShot(0, lambda: (self.activateWindow(), self.raise_(), self.setFocus()))
         self.show()
         self.raise_()
         self.activateWindow()
