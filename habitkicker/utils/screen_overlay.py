@@ -10,7 +10,7 @@ import pygame.mixer
 import os
 
 class ScreenOverlay:
-    def __init__(self, thickness = 10):
+    def __init__(self, thickness = 15):
         """Initialize the screen outline overlay
         
         Args:
@@ -252,7 +252,7 @@ class ScreenOverlay:
         window.geometry(f"{width}x{height}+0+0")
         window.overrideredirect(True)  # Remove window decorations
         window.attributes("-topmost", True)  # Keep on top
-        window.attributes("-alpha", 0.15)  # Set transparency to 15%
+        window.attributes("-alpha", 0.25)  # Set transparency to 25%
         
         # Create canvas for drawing
         canvas = Canvas(window, bg = "black", highlightthickness = 0, width = width, height = height)
