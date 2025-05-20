@@ -500,10 +500,10 @@ class ScreenOverlay:
             # Check if this habit was previously detected for 3+ seconds
             if current_time - self.habit_status['nail_biting']['start_time'] >= self.nail_detection_threshold:
                 any_habit_active = True
-                messages.append("Nail Biting Detected")
+                messages.append("Nail Biting Detected!")
             # If outline is already showing, display message immediately
             elif self.is_showing:
-                immediate_messages.append("Nail Biting Detected")
+                immediate_messages.append("Nail Biting Detected!")
         else:
             self.habit_status['nail_biting']['active'] = False
         
@@ -517,10 +517,10 @@ class ScreenOverlay:
             # Check if this habit was previously detected for 3+ seconds
             if current_time - self.habit_status['hair_pulling']['start_time'] >= self.hair_detection_threshold:
                 any_habit_active = True
-                messages.append("Hair Pulling Detected")
+                messages.append("Hair Pulling Detected!")
             # If outline is already showing, display message immediately
             elif self.is_showing:
-                immediate_messages.append("Hair Pulling Detected")
+                immediate_messages.append("Hair Pulling Detected!")
         else:
             self.habit_status['hair_pulling']['active'] = False
         
@@ -534,10 +534,10 @@ class ScreenOverlay:
             # Check if this habit was previously detected for 3+ seconds
             if current_time - self.habit_status['slouching']['start_time'] >= self.slouch_detection_threshold:
                 any_habit_active = True
-                messages.append("Slouching Detected")
+                messages.append("Slouching Detected!")
             # If outline is already showing, display message immediately
             elif self.is_showing:
-                immediate_messages.append("Slouching Detected")
+                immediate_messages.append("Slouching Detected!")
         else:
             self.habit_status['slouching']['active'] = False
         
