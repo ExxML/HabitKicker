@@ -46,7 +46,7 @@ class HabitKickerGUI(QMainWindow):
 
         # Default settings
         self.default_settings = {
-            "nail_distance": 30,
+            "nail_distance": 20,
             "hair_distance": 100,
             "nail_detection": True,
             "hair_detection": True,
