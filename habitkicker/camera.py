@@ -211,11 +211,11 @@ class Camera:
     def _display_alerts(self, frame, nail_biting_detected, hair_pulling_detected, slouching_detected):
         """Display habit detection alerts"""
         if nail_biting_detected:
-            cv2.putText(frame, "Nail Biting Detected", (50, 50),
+            cv2.putText(frame, "Nail Biting Detected!", (50, 50),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, self._red, 2)
         
         if hair_pulling_detected:
-            cv2.putText(frame, "Hair Pulling Detected", (50, 90),
+            cv2.putText(frame, "Hair Pulling Detected!", (50, 90),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, self._red, 2)
         
         # Update screen outline with habit status
