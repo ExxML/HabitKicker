@@ -463,6 +463,132 @@ class ScreenOverlay:
         if self.notification_animation_in_progress and self.root:
             self.root.after(self.notification_animation_delay, lambda: self._animate_notification_step(animation_showing))
     
+    def _update_notification_color(self, color):
+        """Update the notification window color to match the outline
+        
+        Args:
+            color: Color name ("orange", "red", "green2", etc.)
+        """
+        if not self.root or not self.notification_window:
+            return
+            
+        canvas = self.notification_window.winfo_children()[0]
+        
+        # Update background color
+        canvas.itemconfig("bg", fill = self._get_notification_bg_color(color))
+        
+        canvas.itemconfig("title", text = "HabitKicker Alert", fill = "white")
+        canvas.itemconfig("line", fill = "gray")
+    
+    def _get_notification_bg_color(self, outline_color):
+        """Get the appropriate notification background color based on outline color
+        
+        Args:
+            outline_color: The current outline color
+            
+        Returns:
+            Appropriate background color for the notification
+        """
+        if outline_color == "orange":
+            return "#663300"  # Orange
+        elif outline_color == "red":
+            return "#660000"  # Red
+        elif outline_color == "green2":
+            return "#006600"  # Green
+        else:
+            return None
+
+    def show_tint(self):
+        """Show the red screen tint"""
+        if not self.root or not self.tint_window or not self.show_red_tint:
+            return
+        
+        # Configure the tint window with red background
+        canvas = self.tint_window.winfo_children()[0]
+        canvas.configure(bg = "red")
+        
+        # Show the tint window
+        self.tint_window.deiconify()
+        self.is_tinted = True
+        
+        # Record the time when the tint was shown
+        self.tint_start_time = time.time()
+        
+        # Schedule audio check
+        if self.audio_initialized:
+            self.root.after(int(self.escalation_threshold * 1000), self._check_audio_start)
+
+    def hide_tint(self):
+        """Hide the screen tint"""
+        if not self.root or not self.tint_window:
+            return
+        
+        # Hide the tint window
+        self.tint_window.withdraw()
+        self.is_tinted = False
+        
+        # Stop audio if it's playing
+        if self.audio_playing:
+            self.stop_audio()
+
+    def initialize_audio(self, sound_path):
+        """Initialize the audio playback"""
+        if not self.root or not sound_path:
+            return
+        
+        # Initialize pygame mixer
+        pygame.mixer.init()
+        
+        # Load the sound file
+        self.alarm_sound = pygame.mixer.Sound(sound_path)
+        self.alarm_sound.set_volume(self.alarm_volume)
+
+        # Mark audio as initialized
+        self.audio_initialized = True
+
+    def _check_audio_start(self):
+        """Check if audio should start playing based on tint duration"""
+        if not self.root or not self.is_tinted:
+            return
+        
+        # Start audio
+        if self.is_tinted and self.audio_initialized and not self.audio_playing:
+            self.start_audio()
+            # Schedule the alarm to play repeatedly
+            self._play_alarm_loop()
+
+    def _play_alarm_loop(self):
+        """Play the alarm sound in a loop while audio is playing"""
+        if not self.root or not self.audio_playing:
+            return
+        
+        # Play the alarm sound
+        if self.alarm_sound:
+            self.alarm_sound.play()
+        
+        # Schedule next alarm if audio is still playing
+        if self.audio_playing:
+            self.root.after(500, self._play_alarm_loop)  # Play every second (the duration of the alarm sound is 500 ms)
+
+    def start_audio(self):
+        """Start the audio playback"""
+        if not self.root or not self.alarm_sound:
+            return
+        
+        # Start the audio playback
+        self.audio_playing = True
+        # The sound is played by _play_alarm_loop
+
+    def stop_audio(self):
+        """Stop the audio playback"""
+        if not self.root or not self.alarm_sound:
+            return
+        
+        # Stop the audio playback
+        self.audio_playing = False
+        if self.alarm_sound:
+            self.alarm_sound.stop()
+
     def update_habit_status(self, nail_biting, hair_pulling, slouching):
         """Update the habit detection status and manage outline display
         
@@ -591,28 +717,6 @@ class ScreenOverlay:
                     self.notification_window.withdraw()
                     self.notification_visible = False
     
-    def cleanup(self):
-        """Clean up resources"""
-        if self.root:
-            try:
-                # Stop audio if it's playing
-                if self.audio_playing:
-                    self.stop_audio()
-                
-                # Clean up pygame resources
-                if self.audio_initialized:
-                    pygame.mixer.quit()
-                
-                # Flag shutdown
-                self.shutdown_requested = True
-                
-                # Wait for the tkinter thread to finish
-                if hasattr(self, 'init_thread') and self.init_thread.is_alive():
-                    self.init_thread.join(timeout=1.0)
-                
-            except Exception as e:
-                print(f"Warning during cleanup: {e}")
-    
     def _check_shutdown(self):
         """Check if shutdown was requested and schedule next check"""
         if self.shutdown_requested:
@@ -681,131 +785,3 @@ class ScreenOverlay:
                 self.root.destroy()
         except Exception as e:
             print(f"Warning during final destruction: {e}")
-
-    def show_tint(self):
-        """Show the red screen tint"""
-        if not self.root or not self.tint_window or not self.show_red_tint:
-            return
-        
-        # Configure the tint window with red background
-        canvas = self.tint_window.winfo_children()[0]
-        canvas.configure(bg = "red")
-        
-        # Show the tint window
-        self.tint_window.deiconify()
-        self.is_tinted = True
-        
-        # Record the time when the tint was shown
-        self.tint_start_time = time.time()
-        
-        # Schedule audio check
-        if self.audio_initialized:
-            self.root.after(int(self.escalation_threshold * 1000), self._check_audio_start)
-
-    def hide_tint(self):
-        """Hide the screen tint"""
-        if not self.root or not self.tint_window:
-            return
-        
-        # Hide the tint window
-        self.tint_window.withdraw()
-        self.is_tinted = False
-        
-        # Stop audio if it's playing
-        if self.audio_playing:
-            self.stop_audio()
-
-    def _check_audio_start(self):
-        """Check if audio should start playing based on tint duration"""
-        if not self.root or not self.is_tinted:
-            return
-        
-        current_time = time.time()
-        # If tint has been showing for escalation_threshold seconds, start audio
-        if current_time - self.tint_start_time >= self.escalation_threshold and self.is_tinted:
-            if self.audio_initialized and not self.audio_playing:
-                self.start_audio()
-                # Schedule the alarm to play repeatedly
-                self._play_alarm_loop()
-
-    def _play_alarm_loop(self):
-        """Play the alarm sound in a loop while audio is playing"""
-        if not self.root or not self.audio_playing:
-            return
-        
-        # Play the alarm sound
-        if self.alarm_sound:
-            self.alarm_sound.play()
-        
-        # Schedule next alarm if audio is still playing
-        if self.audio_playing:
-            self.root.after(500, self._play_alarm_loop)  # Play every second
-
-    def _update_notification_color(self, color):
-        """Update the notification window color to match the outline
-        
-        Args:
-            color: Color name ("orange", "red", "green2", etc.)
-        """
-        if not self.root or not self.notification_window:
-            return
-            
-        canvas = self.notification_window.winfo_children()[0]
-        
-        # Update background color
-        canvas.itemconfig("bg", fill = self._get_notification_bg_color(color))
-        
-        canvas.itemconfig("title", text = "HabitKicker Alert", fill = "white")
-        canvas.itemconfig("line", fill = "gray")
-    
-    def _get_notification_bg_color(self, outline_color):
-        """Get the appropriate notification background color based on outline color
-        
-        Args:
-            outline_color: The current outline color
-            
-        Returns:
-            Appropriate background color for the notification
-        """
-        if outline_color == "orange":
-            return "#663300"  # Orange
-        elif outline_color == "red":
-            return "#660000"  # Red
-        elif outline_color == "green2":
-            return "#006600"  # Green
-        else:
-            return None
-
-    def start_audio(self):
-        """Start the audio playback"""
-        if not self.root or not self.alarm_sound:
-            return
-        
-        # Start the audio playback
-        self.audio_playing = True
-        # The sound is played by _play_alarm_loop
-
-    def stop_audio(self):
-        """Stop the audio playback"""
-        if not self.root or not self.alarm_sound:
-            return
-        
-        # Stop the audio playback
-        self.audio_playing = False
-        if self.alarm_sound:
-            self.alarm_sound.stop()
-
-    def initialize_audio(self, sound_path):
-        """Initialize the audio playback"""
-        if not self.root or not sound_path:
-            return
-        
-        # Initialize pygame mixer
-        pygame.mixer.init()
-        
-        # Load the sound file
-        self.alarm_sound = pygame.mixer.Sound(sound_path)
-        self.alarm_sound.set_volume(self.alarm_volume)
-
-        # Mark audio as initialized
-        self.audio_initialized = True
