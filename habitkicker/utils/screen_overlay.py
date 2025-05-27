@@ -776,22 +776,6 @@ class ScreenOverlay:
         else:
             return None
 
-    def play_alarm(self):
-        """Play the alarm sound"""
-        if not self.root or not self.alarm_sound:
-            return
-        
-        # Play the alarm sound
-        self.alarm_sound.play()
-
-    def stop_alarm(self):
-        """Stop the alarm sound"""
-        if not self.root or not self.alarm_sound:
-            return
-        
-        # Stop the alarm sound
-        self.alarm_sound.stop()
-
     def start_audio(self):
         """Start the audio playback"""
         if not self.root or not self.alarm_sound:
@@ -799,7 +783,7 @@ class ScreenOverlay:
         
         # Start the audio playback
         self.audio_playing = True
-        # The actual sound playing is handled by _play_alarm_loop
+        # The sound is played by _play_alarm_loop
 
     def stop_audio(self):
         """Stop the audio playback"""
@@ -810,14 +794,6 @@ class ScreenOverlay:
         self.audio_playing = False
         if self.alarm_sound:
             self.alarm_sound.stop()
-
-    def is_audio_playing(self):
-        """Check if the audio is currently playing"""
-        return self.audio_playing
-
-    def is_audio_initialized(self):
-        """Check if the audio is initialized"""
-        return self.audio_initialized
 
     def initialize_audio(self, sound_path):
         """Initialize the audio playback"""
@@ -833,17 +809,3 @@ class ScreenOverlay:
 
         # Mark audio as initialized
         self.audio_initialized = True
-
-    def update_audio_state(self):
-        """Update the audio state based on the current outline color"""
-        if not self.root or not self.alarm_sound:
-            return
-        
-        # Check if the current outline color is red
-        if self.current_color == "red":
-            # Start the audio playback if it's not already playing
-            if not self.audio_playing:
-                self.start_audio()
-        else:
-            # Stop the audio playback if it's playing
-            self.stop_audio() 
