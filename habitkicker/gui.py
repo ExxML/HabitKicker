@@ -54,8 +54,8 @@ class HabitKickerGUI(QMainWindow):
             "show_notifications": True,
             "show_screen_outline": True,
             "show_red_tint": True,
-            "alarm_volume": 10,
-            "camera_fps": 2  # Default 2 FPS
+            "alarm_volume": 15,
+            "camera_fps": 2
         }
         
         # Current settings
