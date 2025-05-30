@@ -2,7 +2,7 @@
 
 import sys
 from PyQt6.QtWidgets import QApplication
-from gui import HabitKickerGUI
+from gui.gui import HabitKickerGUI
 
 def main():
     """Main function to run the HabitKicker application"""

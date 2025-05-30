@@ -1,1 +1,0 @@
-"""Detectors package for HabitKicker application.""" 
