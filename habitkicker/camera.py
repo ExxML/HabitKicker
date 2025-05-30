@@ -106,13 +106,6 @@ class Camera:
         self.mp_handler.mp_drawing.draw_landmarks(
             image = frame,
             landmark_list = face_landmark,
-            connections = self.mp_handler.mp_face_mesh.FACEMESH_TESSELATION,
-            landmark_drawing_spec = None,
-            connection_drawing_spec = self._face_mesh_tesselation_style
-        )
-        self.mp_handler.mp_drawing.draw_landmarks(
-            image = frame,
-            landmark_list = face_landmark,
             connections = self.mp_handler.mp_face_mesh.FACEMESH_CONTOURS,
             landmark_drawing_spec = None,
             connection_drawing_spec = self._face_mesh_contours_style
