@@ -10,14 +10,9 @@ import pygame.mixer
 import os
 
 class ScreenOverlay:
-    def __init__(self, thickness = 15):
-        """Initialize the screen outline overlay
-        
-        Args:
-            thickness: Thickness of the outline in pixels
-            alpha: Transparency of the outline (0-1, where 1 is opaque)
-        """
-        self.thickness = thickness
+    def __init__(self):
+        """Initialize the screen outline overlay"""
+        self.thickness = 20
         self.current_alpha = 0  # Tracks current transparency
         self.root = None
         self.windows = []
