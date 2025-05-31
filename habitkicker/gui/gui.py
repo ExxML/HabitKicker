@@ -393,7 +393,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Notification toggle
         notification_layout = QHBoxLayout()
-        notification_label = QLabel("Show Notifications (3s):")
+        notification_label = QLabel("Show Notifications (2s):")
         self.notification_checkbox = QCheckBox()
         self.notification_checkbox.setChecked(self.settings["show_notifications"])  # Use saved value
         self.notification_checkbox.stateChanged.connect(self.toggle_notifications)
@@ -405,7 +405,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Screen outline toggle
         outline_layout = QHBoxLayout()
-        outline_label = QLabel("Show Screen Outline (3s):")
+        outline_label = QLabel("Show Screen Outline (2s):")
         self.outline_checkbox = QCheckBox()
         self.outline_checkbox.setChecked(self.settings["show_screen_outline"])  # Use saved value
         self.outline_checkbox.stateChanged.connect(self.toggle_screen_outline)
@@ -417,7 +417,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Tint toggle
         tint_layout = QHBoxLayout()
-        tint_label = QLabel("Show Tint (9s):")
+        tint_label = QLabel("Show Tint (6s):")
         self.tint_checkbox = QCheckBox()
         self.tint_checkbox.setChecked(self.settings["show_red_tint"])  # Use saved value
         self.tint_checkbox.stateChanged.connect(self.toggle_tint)
@@ -429,7 +429,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Volume slider
         volume_layout = QHBoxLayout()
-        volume_label = QLabel("Alarm Volume (12s):")
+        volume_label = QLabel("Alarm Volume (8s):")
         self.volume_label = volume_label  # Store reference to label
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
@@ -936,7 +936,7 @@ class HabitKickerGUI(QMainWindow):
                 while not self.camera.cap:
                     time.sleep(0.1)
                 # Additional delay to ensure full initialization of alert windows
-                time.sleep(-self.settings["camera_fps"]/30 + 1.5)
+                time.sleep(-self.settings["camera_fps"]/30 + 1)
 
                 # Configure detection settings
                 self.camera.enable_nail_detection = self.settings["nail_detection"]

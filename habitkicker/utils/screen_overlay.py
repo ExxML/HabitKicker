@@ -34,7 +34,7 @@ class ScreenOverlay:
         # Alert escalation tracking
         self.orange_outline_start_time = 0  # When orange outline first appeared
         self.red_outline_start_time = 0  # When red outline first appeared
-        self.escalation_threshold = 3.0  # Time before escalating to next alert level
+        self.escalation_threshold = 2.0  # Time before escalating to next alert level
         self.tint_window = None
         self.is_tinted = False
         
@@ -46,7 +46,7 @@ class ScreenOverlay:
         # Green feedback tracking
         self.green_feedback_active = False  # Whether green feedback is active
         self.green_start_time = 0  # When green outline was shown
-        self.green_duration = 1.0  # How long to show green outline (seconds)
+        self.green_duration = 0.5  # How long to show green outline (seconds)
         
         # Notification window
         self.notification_window = None
@@ -594,7 +594,7 @@ class ScreenOverlay:
         """
         current_time = time.time()
         any_habit_active = False
-        any_habit_detected = False  # Track if any habit is currently detected (even if not for 3 seconds yet)
+        any_habit_detected = False  # Track if any habit is currently detected (even if not for detection threshold seconds yet)
         messages = []
         immediate_messages = []  # For habits that should show messages immediately
         
@@ -618,7 +618,7 @@ class ScreenOverlay:
                 self.habit_status['nail_biting']['start_time'] = current_time
                 self.habit_status['nail_biting']['active'] = True
             
-            # Check if this habit was previously detected for 3+ seconds
+            # Check if this habit was previously detected for nail detection threshold seconds
             if current_time - self.habit_status['nail_biting']['start_time'] >= self.nail_detection_threshold:
                 any_habit_active = True
                 messages.append("Nail Biting Detected!")
@@ -635,7 +635,7 @@ class ScreenOverlay:
                 self.habit_status['hair_pulling']['start_time'] = current_time
                 self.habit_status['hair_pulling']['active'] = True
             
-            # Check if this habit was previously detected for 3+ seconds
+            # Check if this habit was previously detected for hairdetection threshold seconds
             if current_time - self.habit_status['hair_pulling']['start_time'] >= self.hair_detection_threshold:
                 any_habit_active = True
                 messages.append("Hair Pulling Detected!")
@@ -652,7 +652,7 @@ class ScreenOverlay:
                 self.habit_status['slouching']['start_time'] = current_time
                 self.habit_status['slouching']['active'] = True
             
-            # Check if this habit was previously detected for 3+ seconds
+            # Check if this habit was previously detected for slouch detection threshold seconds
             if current_time - self.habit_status['slouching']['start_time'] >= self.slouch_detection_threshold:
                 any_habit_active = True
                 messages.append("Slouching Detected!")
@@ -664,7 +664,7 @@ class ScreenOverlay:
         
         # Manage outline display and messages
         if any_habit_active:
-            # Update the last detection time when a habit is active for 3+ seconds
+            # Update the last detection time when a habit is active for escalation threshold seconds
             self.last_detection_time = current_time
             
             # Determine which alert level to show based on escalation timing
@@ -688,13 +688,12 @@ class ScreenOverlay:
             if self.is_showing and immediate_messages:
                 self.message_text = "\n".join(immediate_messages)
                 self.update_message(self.message_text)
-            # Otherwise, clear message if no habits are active for 3+ seconds and no immediate messages
+            # Otherwise, clear message if no habits are active and no immediate messages
             elif self.message_text and not immediate_messages:
                 self.message_text = ""
                 self.update_message(self.message_text)
             
-            # If any habit is currently detected (but not for 3 seconds yet),
-            # keep the outline visible and reset the last detection time
+            # If any habit is currently detected, keep the outline visible and reset the last detection time
             if any_habit_detected and self.is_showing:
                 self.last_detection_time = current_time
             # Otherwise, check if we should show green feedback or hide the outline
