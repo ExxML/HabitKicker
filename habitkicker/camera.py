@@ -16,7 +16,6 @@ class Camera:
         self.habit_detector = HabitDetector(max_nail_pulling_distance, max_hair_pulling_distance)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
         self.config = LandmarkConfig()
-        self.show_landmarks = True
         self.cap = None
         self.is_calibrating = False
         self.calibration_complete_time = 0  # Track when calibration completed
@@ -34,8 +33,6 @@ class Camera:
         self.screen_overlay.show_red_tint = False
         
         # Cache for drawing styles to avoid recreating them each frame
-        self._face_mesh_tesselation_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_tesselation_style()
-        self._face_mesh_contours_style = self.mp_handler.mp_drawing_styles.get_default_face_mesh_contours_style()
         self._pose_landmarks_style = self.mp_handler.mp_drawing_styles.get_default_pose_landmarks_style()
         
         # Common colors
@@ -43,7 +40,6 @@ class Camera:
         self._green = (0, 255, 0)
         self._blue = (255, 0, 0)
         self._yellow = (0, 255, 255)
-        self._yellow_alert = (255, 255, 0)
         
         # Current frame for external access
         self.current_frame = None
@@ -93,34 +89,12 @@ class Camera:
             color = self._blue if idx in self.config.MOUTH_LANDMARKS else self._green
             cv2.circle(frame, pos, 5, color, -1)
         
-        # Draw face mesh
-        self._draw_face_mesh(frame, face_landmark)
-        
         return face_landmarks
-
-    def _draw_face_mesh(self, frame, face_landmark):
-        """Draw the face mesh and contours"""
-        if not self.show_landmarks:
-            return
-            
-        self.mp_handler.mp_drawing.draw_landmarks(
-            image = frame,
-            landmark_list = face_landmark,
-            connections = self.mp_handler.mp_face_mesh.FACEMESH_CONTOURS,
-            landmark_drawing_spec = None,
-            connection_drawing_spec = self._face_mesh_contours_style
-        )
 
     def _process_hand_landmarks(self, frame, hand_landmarks, face_landmarks):
         """Process hand landmarks and detect habits"""
         nail_biting_detected = False
         hair_pulling_detected = False
-        
-        # Draw hand landmarks
-        if self.show_landmarks:
-            self.mp_handler.mp_drawing.draw_landmarks(
-                frame, hand_landmarks, self.mp_handler.mp_hands.HAND_CONNECTIONS
-            )
         
         # Pre-calculate frame shape once
         frame_shape = frame.shape
@@ -148,8 +122,7 @@ class Camera:
             
         thumb_tip = hand_landmarks.landmark[self.config.THUMB_TIP]
         thumb_pos = self.calculate_landmark_position(thumb_tip, frame_shape)
-        if self.show_landmarks:
-            cv2.circle(frame, thumb_pos, 8, self._yellow, -1)
+        cv2.circle(frame, thumb_pos, 8, self._yellow, -1)
         return thumb_pos
 
     def _get_other_fingertip_positions(self, frame, hand_landmarks, frame_shape=None):
@@ -162,8 +135,7 @@ class Camera:
             fingertip = hand_landmarks.landmark[finger_id]
             pos = self.calculate_landmark_position(fingertip, frame_shape)
             positions[finger_id] = pos
-            if self.show_landmarks:
-                cv2.circle(frame, pos, 8, self._yellow, -1)
+            cv2.circle(frame, pos, 8, self._yellow, -1)
         return positions
 
     def _check_nail_biting(self, frame, hand_landmarks, face_landmarks, frame_shape=None):
@@ -220,14 +192,13 @@ class Camera:
 
     def _process_pose_landmarks(self, frame, pose_landmark):
         """Process and draw pose landmarks for slouch detection"""
-        if self.show_landmarks:
-            # Draw pose landmarks
-            self.mp_handler.mp_drawing.draw_landmarks(
-                frame,
-                pose_landmark,
-                self.mp_handler.mp_pose.POSE_CONNECTIONS,
-                landmark_drawing_spec = self._pose_landmarks_style
-            )
+        # Draw pose landmarks
+        self.mp_handler.mp_drawing.draw_landmarks(
+            frame,
+            pose_landmark,
+            self.mp_handler.mp_pose.POSE_CONNECTIONS,
+            landmark_drawing_spec = self._pose_landmarks_style
+        )
         
         # If calibrating, update calibration
         if self.is_calibrating:
