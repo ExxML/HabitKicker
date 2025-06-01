@@ -38,8 +38,8 @@ class Camera:
         # Common colors
         self._red = (0, 0, 255)
         self._green = (0, 255, 0)
-        self._blue = (255, 0, 0)
         self._yellow = (0, 255, 255)
+        self._white = (255, 255, 255)
         
         # Current frame for external access
         self.current_frame = None
@@ -65,7 +65,7 @@ class Camera:
 
     def calculate_landmark_position(self, landmark, image_shape):
         """Calculate pixel position from normalized landmark coordinates"""
-        ih, iw = image_shape[:2]  # Only need height and width
+        ih, iw = image_shape[:2]  # Height and width
         pixel_x = int(landmark.x * iw)
         pixel_y = int(landmark.y * ih)
         return (pixel_x, pixel_y)
@@ -85,9 +85,8 @@ class Camera:
             pos = self.calculate_landmark_position(landmark, frame_shape)
             face_landmarks[idx] = pos
             
-            # Draw landmarks with appropriate colors
-            color = self._blue if idx in self.config.MOUTH_LANDMARKS else self._green
-            cv2.circle(frame, pos, 5, color, -1)
+            # Draw landmarks
+            cv2.circle(frame, pos, 5, self._green, -1)
         
         return face_landmarks
 
@@ -192,13 +191,20 @@ class Camera:
 
     def _process_pose_landmarks(self, frame, pose_landmark):
         """Process and draw pose landmarks for slouch detection"""
-        # Draw pose landmarks
-        self.mp_handler.mp_drawing.draw_landmarks(
-            frame,
-            pose_landmark,
-            self.mp_handler.mp_pose.POSE_CONNECTIONS,
-            landmark_drawing_spec = self._pose_landmarks_style
-        )
+        # Draw shoulder (pose) landmarks (indices 11 and 12)
+        shoulder_indices = [11, 12]
+        
+        # Draw only the shoulder landmarks
+        for idx in shoulder_indices:
+            landmark = pose_landmark.landmark[idx]
+            pos = self.calculate_landmark_position(landmark, frame.shape)
+            cv2.circle(frame, pos, 5, self._white, -1)
+            
+        # Draw connection between shoulders
+        if all(pose_landmark.landmark[idx].visibility > 0.5 for idx in shoulder_indices):
+            start_point = self.calculate_landmark_position(pose_landmark.landmark[shoulder_indices[0]], frame.shape)
+            end_point = self.calculate_landmark_position(pose_landmark.landmark[shoulder_indices[1]], frame.shape)
+            cv2.line(frame, start_point, end_point, self._white, 2)
         
         # If calibrating, update calibration
         if self.is_calibrating:
