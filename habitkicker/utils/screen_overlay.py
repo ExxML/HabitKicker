@@ -34,7 +34,7 @@ class ScreenOverlay:
         # Alert escalation tracking
         self.orange_outline_start_time = 0  # When orange outline first appeared
         self.red_outline_start_time = 0  # When red outline first appeared
-        self.escalation_threshold = 2.0  # Time before escalating to next alert level
+        self.escalation_threshold = 1.5  # Time before escalating to next alert level
         self.tint_window = None
         self.is_tinted = False
         
