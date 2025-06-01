@@ -393,7 +393,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Notification toggle
         notification_layout = QHBoxLayout()
-        notification_label = QLabel("Show Notifications (2s):")
+        notification_label = QLabel("Show Notifications (1s):")
         self.notification_checkbox = QCheckBox()
         self.notification_checkbox.setChecked(self.settings["show_notifications"])  # Use saved value
         self.notification_checkbox.stateChanged.connect(self.toggle_notifications)
@@ -405,7 +405,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Screen outline toggle
         outline_layout = QHBoxLayout()
-        outline_label = QLabel("Show Screen Outline (2s):")
+        outline_label = QLabel("Show Screen Outline (1s):")
         self.outline_checkbox = QCheckBox()
         self.outline_checkbox.setChecked(self.settings["show_screen_outline"])  # Use saved value
         self.outline_checkbox.stateChanged.connect(self.toggle_screen_outline)
@@ -417,7 +417,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Tint toggle
         tint_layout = QHBoxLayout()
-        tint_label = QLabel("Show Tint (6s):")
+        tint_label = QLabel("Show Tint (3s):")
         self.tint_checkbox = QCheckBox()
         self.tint_checkbox.setChecked(self.settings["show_red_tint"])  # Use saved value
         self.tint_checkbox.stateChanged.connect(self.toggle_tint)
@@ -429,7 +429,7 @@ class HabitKickerGUI(QMainWindow):
         
         # Volume slider
         volume_layout = QHBoxLayout()
-        volume_label = QLabel("Alarm Volume (8s):")
+        volume_label = QLabel("Alarm Volume (4s):")
         self.volume_label = volume_label  # Store reference to label
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
