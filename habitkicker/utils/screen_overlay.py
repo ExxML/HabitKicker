@@ -508,10 +508,6 @@ class ScreenOverlay:
         
         # Record the time when the tint was shown
         self.tint_start_time = time.time()
-        
-        # Schedule audio check
-        if self.audio_initialized:
-            self.root.after(int(self.escalation_threshold * 1000), self._check_audio_start)
 
     def hide_tint(self):
         """Hide the screen tint"""
@@ -524,7 +520,7 @@ class ScreenOverlay:
         
         # Stop audio if it's playing
         if self.audio_playing:
-            self.stop_audio()
+            self.stop_alarm()
 
     def initialize_audio(self, sound_path):
         """Initialize the audio playback"""
@@ -541,14 +537,14 @@ class ScreenOverlay:
         # Mark audio as initialized
         self.audio_initialized = True
 
-    def _check_audio_start(self):
+    def start_alarm(self):
         """Check if audio should start playing based on tint duration"""
-        if not self.root or not self.is_tinted:
+        if not self.root or not self.alarm_sound:
             return
         
         # Start audio
-        if self.is_tinted and self.audio_initialized and not self.audio_playing:
-            self.start_audio()
+        if not self.audio_playing:
+            self.audio_playing = True
             # Schedule the alarm to play repeatedly
             self._play_alarm_loop()
 
@@ -565,16 +561,7 @@ class ScreenOverlay:
         if self.audio_playing:
             self.root.after(500, self._play_alarm_loop)  # Play every second (the duration of the alarm sound is 500 ms)
 
-    def start_audio(self):
-        """Start the audio playback"""
-        if not self.root or not self.alarm_sound:
-            return
-        
-        # Start the audio playback
-        self.audio_playing = True
-        # The sound is played by _play_alarm_loop
-
-    def stop_audio(self):
+    def stop_alarm(self):
         """Stop the audio playback"""
         if not self.root or not self.alarm_sound:
             return
@@ -668,7 +655,11 @@ class ScreenOverlay:
             self.last_detection_time = current_time
             
             # Determine which alert level to show based on escalation timing
-            if self.is_showing and self.current_color == "red" and self.is_tinted == False:
+            if self.is_showing and self.current_color == "red" and self.is_tinted == True and self.audio_initialized:
+                # Check if tint has been showing long enough to play alarm
+                if current_time - self.tint_start_time >= self.escalation_threshold:
+                    self.start_alarm()
+            elif self.is_showing and self.current_color == "red" and self.is_tinted == False:
                 # Check if red outline has been showing long enough to add tint
                 if current_time - self.red_outline_start_time >= self.escalation_threshold:
                     self.show_tint()
@@ -727,7 +718,7 @@ class ScreenOverlay:
         try:
             # Stop audio if it's playing
             if self.audio_playing:
-                self.stop_audio()
+                self.stop_alarm()
             
             # Hide all windows first
             for window in self.windows:
