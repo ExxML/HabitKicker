@@ -24,8 +24,8 @@ class ScreenOverlay:
             'hair_pulling': {'active': False, 'start_time': 0},
             'slouching': {'active': False, 'start_time': 0}
         }
-        self.nail_detection_threshold = 2.0  # seconds
-        self.hair_detection_threshold = 1.0  # seconds
+        self.nail_detection_threshold = 1.5  # seconds
+        self.hair_detection_threshold = 0.5  # seconds
         self.slouch_detection_threshold = 3.0  # seconds
         self.clear_threshold = 2.0  # seconds
         self.last_detection_time = 0
@@ -34,7 +34,7 @@ class ScreenOverlay:
         # Alert escalation tracking
         self.orange_outline_start_time = 0  # When orange outline first appeared
         self.red_outline_start_time = 0  # When red outline first appeared
-        self.escalation_threshold = 1.0  # Time before escalating to next alert level
+        self.escalation_threshold = 1.1  # Time before escalating to next alert level
         self.tint_window = None
         self.is_tinted = False
         
