@@ -16,10 +16,10 @@ class Camera:
         self.habit_detector = HabitDetector(max_nail_pulling_distance, max_hair_pulling_distance)
         self.slouch_detector = SlouchDetector(threshold_percentage = slouch_threshold)
         self.config = LandmarkConfig()
+        self.screen_overlay = ScreenOverlay()
         self.cap = None
         self.is_calibrating = False
         self.calibration_complete_time = 0  # Track when calibration completed
-        self.screen_overlay = ScreenOverlay()
         self.processing_delay = 0.5  # Default 2 FPS
         
         # Detection toggles - disabled by default
@@ -53,15 +53,15 @@ class Camera:
 
     def _initialize_camera(self):
         """Initialize camera with specific settings"""
-        cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 854)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-        cap.set(cv2.CAP_PROP_BRIGHTNESS, 150)
-        cap.set(cv2.CAP_PROP_CONTRAST, 150)
+        self.cap = cv2.VideoCapture(0)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 854)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        self.cap.set(cv2.CAP_PROP_BRIGHTNESS, 150)
+        self.cap.set(cv2.CAP_PROP_CONTRAST, 150)
+        
         # Ensure the GUI window stays on top
         QTimer.singleShot(0, self.gui_window.focus_window)
-        return cap
 
     def calculate_landmark_position(self, landmark, image_shape):
         """Calculate pixel position from normalized landmark coordinates"""
@@ -242,7 +242,7 @@ class Camera:
     
     def _camera_thread_function(self):
         """Background thread function for camera processing"""
-        self.cap = self._initialize_camera()
+        self._initialize_camera()
         
         while self.running:
             # Get and process frame
@@ -252,7 +252,7 @@ class Camera:
             if not ret:
                 print("Frame grab failed. Trying to reinitialize...")
                 time.sleep(1)
-                self.cap = self._initialize_camera()
+                self._initialize_camera()
                 continue
 
             try:
