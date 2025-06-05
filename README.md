@@ -60,10 +60,11 @@ python habitkicker\main.py
 pip install nuitka
 ```
 
-2. Generate .exe:
+2. Generate standalone .exe:
 ```bash
 python -m nuitka --standalone --windows-icon-from-ico="data/HabitKicker.ico" --windows-console-mode=disable --enable-plugin=pyqt6 --enable-plugin=tk-inter --include-data-dir=".venv\Lib\site-packages\mediapipe\modules=mediapipe/modules" --include-data-dir="data=data" --include-data-dir="sounds=sounds" habitkicker\main.py
 ```
+#### Note: Win32 calls are used in this program to ensure the notification overlay stays on top. Windows Defender *may* flag this as a virus. Add an exclusion in Settings > Privacy & Security > Windows Security > Virus & Threat Protection > Manage settings > Exclusions > Add an exclusion.
 
 3. [Optional] Auto-run on startup:
 - Create a shortcut for `main.exe`
