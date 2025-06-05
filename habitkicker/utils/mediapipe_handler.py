@@ -4,7 +4,7 @@ import mediapipe as mp
 
 class MediapipeHandler:
     def __init__(self):
-        self.CONFIDENCE = 0.8
+        self.CONFIDENCE = 0.7
         self._initialize_mediapipe()
 
     def _initialize_mediapipe(self):
