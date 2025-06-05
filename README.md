@@ -27,7 +27,7 @@ A computer vision application to detect and break unwanted habits like nail-biti
 
 ## Installation
 
-Run the application using HabitKicker.exe in Releases
+Run the application using HabitKicker/main.exe in Releases
 
 Or from source:
 
