@@ -2,6 +2,8 @@
 
 A computer vision application to detect and break unwanted habits like nail-biting, hair-pulling, and slouching using real-time posture analysis.
 
+![alt text](PreviewImage.jpg)
+
 ## Features
 
 - Real-time habit detection using computer vision
@@ -33,7 +35,7 @@ Or from source:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/cmd-Exx/HabitKicker.git
+git clone https://github.com/ExxML/HabitKicker.git
 cd HabitKicker
 ```
 
