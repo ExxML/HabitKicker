@@ -1,6 +1,6 @@
 # HabitKicker
 
-A computer vision application to detect and break unwanted habits like nail-biting, hair-pulling, and slouching using real-time posture analysis.
+A computer vision application for Windows that automatically detects unwanted habits like nail-biting, hair-pulling, and slouching using real-time landmark analysis.
 
 ![alt text](PreviewImage.jpg)
 
