@@ -39,5 +39,5 @@ class HabitDetector:
             finger_to_thumb = np.linalg.norm(np.array(finger_pos) - np.array(thumb_pos))
             
             return (finger_to_forehead < self.HAIR_PULLING_THRESHOLD and 
-                   finger_to_thumb < 40)
+                   finger_to_thumb < 30)
         return False 
